@@ -1,8 +1,12 @@
-// app/api/orders/route.js
-import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+// /app/api/orders/route.js (or .ts)
+import { prisma } from '@/lib/prisma';
 
 export async function GET() {
-  const orders = await prisma.order.findMany();
-  return NextResponse.json(orders);
+  try {
+    const orders = await prisma.order.findMany();
+    return Response.json(orders);
+  } catch (error) {
+    console.error('[GET /api/orders] Error:', error);
+    return new Response('Internal Server Error', { status: 500 });
+  }
 }
