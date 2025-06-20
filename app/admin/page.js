@@ -1,37 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Calendar,
-  Clock,
-  Package,
-  Truck,
-  User,
-  Users,
-  DollarSign,
-  CheckCircle,
-  AlertCircle,
-  Search,
-  Filter,
-  Plus,
-  MapPin,
-  Phone,
-  Mail,
-  Settings,
-  Bell,
-  Menu,
-  X,
-  Home,
-  Clipboard,
-  BarChart3,
-  HelpCircle,
-  Loader,
-  Download,
-  CalendarCheck,
-  CalendarX2,
-  CalendarDays,
-  ChevronLeft,
-  ChevronRight
+  Calendar, Clock, Package, Truck, User, Users, DollarSign, CheckCircle,
+  AlertCircle, Search, Filter, Plus, MapPin, Phone, Mail, Settings,
+  Bell, Menu, X, Home, Clipboard, BarChart3, HelpCircle, Loader,
+  Download, CalendarCheck, CalendarX2, CalendarDays, ChevronLeft, ChevronRight
 } from 'lucide-react';
 
 // Import components
@@ -44,28 +18,35 @@ import AppointmentCalendarView from '@/components/admin/AppointmentCalendarView'
 import Modal from '@/components/common/Modal';
 import AppointmentForm from '@/components/common/AppointmentForm';
 
-// Mock data
-const mockOrders = [
-  { id: 'LD001', customer: 'John Doe', phone: '+1234567890', weight: '5kg', status: 'pending', eta: '2024-06-19T10:00:00Z', total: 45.00 },
-  { id: 'LD002', customer: 'Jane Smith', phone: '+1234567891', weight: '3kg', status: 'in_wash', eta: '2024-06-19T14:00:00Z', total: 35.00 },
-  { id: 'LD003', customer: 'Bob Wilson', phone: '+1234567892', weight: '7kg', status: 'ready', eta: '2024-06-19T16:00:00Z', total: 65.00 },
-  { id: 'LD004', customer: 'Alice Johnson', phone: '+1234567893', weight: '4kg', status: 'delivered', eta: '2024-06-18T18:00:00Z', total: 40.00 }
-];
-
-const mockAppointments = [
-  { id: 'AP001', customer: 'Mike Brown', phone: '+1234567894', date: '2024-06-20T10:00:00Z', service: 'Wash & Fold', notes: 'Has delicate items', status: 'pending' },
-  { id: 'AP002', customer: 'Sarah Wilson', phone: '+1234567895', date: '2024-06-20T14:00:00Z', service: 'Dry Clean', notes: 'Urgent - needed by Friday', status: 'approved' },
-  { id: 'AP003', customer: 'David Lee', phone: '+1234567896', date: '2024-06-21T11:00:00Z', service: 'Wash & Iron', notes: 'Large blanket included', status: 'rejected', rejectionReason: 'Fully booked at this time' }
-];
-
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [orders, setOrders] = useState(mockOrders);
-  const [appointments, setAppointments] = useState(mockAppointments);
+  const [orders, setOrders] = useState([]);
+  const [appointments, setAppointments] = useState([]);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [appointmentSuccess, setAppointmentSuccess] = useState(false);
+
+  useEffect(() => {
+    const fetchOrdersAndAppointments = async () => {
+      try {
+        const [ordersRes, apptRes] = await Promise.all([
+          fetch('/api/orders'),
+          fetch('/api/appointments')
+        ]);
+        const [ordersData, appointmentsData] = await Promise.all([
+          ordersRes.json(),
+          apptRes.json()
+        ]);
+        setOrders(ordersData);
+        setAppointments(appointmentsData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+
+    fetchOrdersAndAppointments();
+  }, []);
 
   const handleStatusUpdate = (orderId, newStatus) => {
     setOrders(prev => prev.map(order =>
@@ -111,12 +92,10 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex h-screen bg-gray-50">
-        {/* Desktop Sidebar */}
         <div className="hidden md:block w-64">
           <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
         </div>
 
-        {/* Mobile Menu */}
         {isMobileMenuOpen && (
           <div className="fixed inset-0 z-50 md:hidden">
             <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setIsMobileMenuOpen(false)} />
@@ -132,9 +111,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Main Content */}
         <div className="flex-1 flex flex-col">
-          {/* Mobile Header */}
           <div className="md:hidden bg-white shadow-sm border-b px-4 py-3 flex items-center justify-between">
             <button onClick={() => setIsMobileMenuOpen(true)}>
               <Menu size={24} />
@@ -215,12 +192,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Add Order Modal */}
-      <Modal
-        isOpen={isOrderModalOpen}
-        onClose={() => setIsOrderModalOpen(false)}
-        title="Add New Order"
-      >
+      <Modal isOpen={isOrderModalOpen} onClose={() => setIsOrderModalOpen(false)} title="Add New Order">
         <form className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name</label>
@@ -249,56 +221,29 @@ export default function AdminDashboard() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Address</label>
-            <textarea
-              rows="2"
-              className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter full delivery address..."
-            />
+            <textarea rows="2" className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter full delivery address..." />
           </div>
           <div className="flex space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={() => setIsOrderModalOpen(false)}
-              className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
+            <button type="button" onClick={() => setIsOrderModalOpen(false)} className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
               Cancel
             </button>
-            <button
-              type="submit"
-              className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-            >
+            <button type="submit" className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
               Create Order
             </button>
           </div>
         </form>
       </Modal>
 
-      {/* Book Appointment Modal */}
-      <Modal
-        isOpen={isAppointmentModalOpen}
-        onClose={() => setIsAppointmentModalOpen(false)}
-        title="Book Appointment"
-      >
-        <AppointmentForm
-          onSubmit={handleBookAppointment}
-          onCancel={() => setIsAppointmentModalOpen(false)}
-        />
+      <Modal isOpen={isAppointmentModalOpen} onClose={() => setIsAppointmentModalOpen(false)} title="Book Appointment">
+        <AppointmentForm onSubmit={handleBookAppointment} onCancel={() => setIsAppointmentModalOpen(false)} />
       </Modal>
 
-      {/* Appointment Success Modal */}
-      <Modal
-        isOpen={appointmentSuccess}
-        onClose={() => setAppointmentSuccess(false)}
-        title="Appointment Booked!"
-      >
+      <Modal isOpen={appointmentSuccess} onClose={() => setAppointmentSuccess(false)} title="Appointment Booked!">
         <div className="text-center p-6">
           <CheckCircle className="mx-auto text-green-500 mb-4" size={48} />
           <h3 className="text-xl font-semibold mb-2">Thank You!</h3>
           <p className="text-gray-600 mb-6">Your appointment has been successfully booked. We'll contact you to confirm the details.</p>
-          <button
-            onClick={() => setAppointmentSuccess(false)}
-            className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600"
-          >
+          <button onClick={() => setAppointmentSuccess(false)} className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600">
             Close
           </button>
         </div>
