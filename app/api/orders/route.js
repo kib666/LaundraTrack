@@ -1,4 +1,5 @@
 // /app/api/orders/route.js (or .ts)
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 export async function GET() {
@@ -8,7 +9,7 @@ export async function GET() {
         createdAt: 'desc'
       }
     });
-    return Response.json(orders);
+    return NextResponse.json(orders);
   } catch (error) {
     console.error('[GET /api/orders] Error:', error);
     return new Response('Internal Server Error', { status: 500 });
@@ -31,7 +32,7 @@ export async function POST(request) {
       }
     });
     
-    return Response.json(order);
+    return NextResponse.json(order);
   } catch (error) {
     console.error('[POST /api/orders] Error:', error);
     return new Response('Internal Server Error', { status: 500 });

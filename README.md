@@ -25,7 +25,7 @@ A comprehensive laundry management system built with Next.js, Prisma, and MongoD
 - MongoDB database (local or cloud)
 - npm or yarn package manager
 
-## Installation
+## Quick Start
 
 1. **Clone the repository**
    ```bash
@@ -67,6 +67,27 @@ A comprehensive laundry management system built with Next.js, Prisma, and MongoD
    ```
 
 The application will be available at `http://localhost:3000`
+
+## Deployment
+
+**⚠️ Important**: Before deploying, make sure to:
+
+1. Set up your MongoDB database (MongoDB Atlas recommended)
+2. Configure environment variables in your deployment platform
+3. See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions
+
+### Quick Deployment Steps:
+
+1. **Set up MongoDB Atlas** (if not using local MongoDB)
+2. **Deploy to Vercel**:
+   - Connect your GitHub repository to Vercel
+   - Add `DATABASE_URL` environment variable
+   - Deploy automatically
+
+3. **Test the application**:
+   - Customer portal: `/customer`
+   - Admin dashboard: `/admin`
+   - Staff portal: `/staff`
 
 ## Database Schema
 
@@ -159,24 +180,24 @@ npx prisma studio
 npx prisma db push --force-reset
 ```
 
-## Deployment
-
-### Vercel (Recommended)
-1. Connect your GitHub repository to Vercel
-2. Set environment variables in Vercel dashboard
-3. Deploy automatically on push to main branch
-
-### Other Platforms
-- Ensure MongoDB connection string is properly configured
-- Set `NODE_ENV=production`
-- Run `npm run build` before deployment
-
 ## Environment Variables
 
 | Variable | Description | Required |
 |----------|-------------|----------|
 | `DATABASE_URL` | MongoDB connection string | Yes |
 | `NODE_ENV` | Environment (development/production) | No |
+
+## Troubleshooting
+
+### Build Issues
+- Ensure `DATABASE_URL` is set in environment variables
+- Check MongoDB connection string format
+- Verify Node.js version is 18+
+
+### Runtime Issues
+- Check database connectivity
+- Verify Prisma client is generated
+- Ensure all environment variables are loaded
 
 ## Contributing
 

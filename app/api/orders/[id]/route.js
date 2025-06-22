@@ -1,3 +1,4 @@
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 export async function PATCH(request, { params }) {
@@ -11,7 +12,7 @@ export async function PATCH(request, { params }) {
       data: { status }
     });
     
-    return Response.json(order);
+    return NextResponse.json(order);
   } catch (error) {
     console.error('[PATCH /api/orders/[id]] Error:', error);
     return new Response('Internal Server Error', { status: 500 });
