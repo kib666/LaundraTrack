@@ -8,7 +8,11 @@ export const metadata = {
   description: 'Complete laundry management solution for businesses and customers. Track orders, manage appointments, and streamline operations.',
   keywords: 'laundry, management, tracking, orders, appointments, business',
   authors: [{ name: 'Laundry Tracker Team' }],
-  viewport: 'width=device-width, initial-scale=1',
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
 }
 
 export default function RootLayout({ children }) {

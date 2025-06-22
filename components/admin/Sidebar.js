@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Package, CalendarDays, BarChart3, Settings } from 'lucide-react';
+import { Home, Package, CalendarDays, BarChart3, Users } from 'lucide-react';
 
 const Sidebar = ({ activeTab, onTabChange }) => {
     const menuItems = [
@@ -7,7 +7,7 @@ const Sidebar = ({ activeTab, onTabChange }) => {
         { key: 'orders', label: 'Orders', icon: Package },
         { key: 'appointments', label: 'Appointments', icon: CalendarDays },
         { key: 'reports', label: 'Reports', icon: BarChart3 },
-        { key: 'settings', label: 'Settings', icon: Settings }
+        { key: 'users', label: 'Users Management', icon: Users }
     ];
 
     return (

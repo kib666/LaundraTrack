@@ -133,7 +133,7 @@ export default function AdminDashboard() {
       case 'orders': return 'Order Management';
       case 'appointments': return 'Appointments';
       case 'reports': return 'Reports';
-      case 'settings': return 'Settings';
+      case 'users': return 'Users Management';
       default: return 'Admin Portal';
     }
   };
@@ -239,11 +239,11 @@ export default function AdminDashboard() {
               </div>
             )}
 
-            {(activeTab === 'reports' || activeTab === 'settings') && (
+            {(activeTab === 'reports' || activeTab === 'users') && (
               <div className="bg-white rounded-lg shadow-sm border p-8 text-center">
                 <BarChart3 className="mx-auto text-gray-400 mb-4" size={48} />
                 <h2 className="text-xl font-semibold mb-2">
-                  {activeTab === 'reports' ? 'Reports' : 'Settings'}
+                  {activeTab === 'reports' ? 'Reports' : 'Users Management'}
                 </h2>
                 <p className="text-gray-600">This section is under development</p>
               </div>
