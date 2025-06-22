@@ -12,16 +12,9 @@ import {
     Mail,
     CalendarCheck,
     CalendarDays,
-    X
+    X,
+    Loader
 } from 'lucide-react';
-
-// Mock data for demo
-const mockOrders = [
-    { id: 'LD001', customer: 'John Doe', phone: '+1234567890', weight: '5kg', status: 'pending', eta: '2024-06-19T10:00:00Z', total: 45.00 },
-    { id: 'LD002', customer: 'Jane Smith', phone: '+1234567891', weight: '3kg', status: 'in_wash', eta: '2024-06-19T14:00:00Z', total: 35.00 },
-    { id: 'LD003', customer: 'Bob Wilson', phone: '+1234567892', weight: '7kg', status: 'ready', eta: '2024-06-19T16:00:00Z', total: 65.00 },
-    { id: 'LD004', customer: 'Alice Johnson', phone: '+1234567893', weight: '4kg', status: 'delivered', eta: '2024-06-18T18:00:00Z', total: 40.00 }
-];
 
 // Utility Components
 const LiveCountdown = ({ targetDate }) => {
@@ -48,153 +41,186 @@ const LiveCountdown = ({ targetDate }) => {
     return <span className="text-sm text-gray-600">{timeLeft}</span>;
 };
 
-const Modal = ({ isOpen, onClose, title, children }) => {
-    if (!isOpen) return null;
+const StatusBadge = ({ status }) => {
+    const statusConfig = {
+        pending: { color: 'bg-yellow-100 text-yellow-800', text: 'Pending' },
+        in_wash: { color: 'bg-blue-100 text-blue-800', text: 'In Wash' },
+        ready: { color: 'bg-green-100 text-green-800', text: 'Ready' },
+        delivered: { color: 'bg-gray-100 text-gray-800', text: 'Delivered' }
+    };
+
+    const config = statusConfig[status] || statusConfig.pending;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-                <div className="flex justify-between items-center p-4 border-b">
-                    <h3 className="text-lg font-semibold">{title}</h3>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-                        <X size={20} />
-                    </button>
-                </div>
-                <div className="p-4">
-                    {children}
-                </div>
-            </div>
-        </div>
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
+            {config.text}
+        </span>
     );
 };
 
 const OrderLookupForm = ({ onLookup }) => {
-    const [orderId, setOrderId] = useState('');
-    const [phone, setPhone] = useState('');
-    const [lookupType, setLookupType] = useState('order');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [searchType, setSearchType] = useState('order');
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onLookup(lookupType === 'order' ? orderId : phone, lookupType);
+        if (searchTerm.trim()) {
+            onLookup(searchTerm.trim(), searchType);
+        }
     };
 
     return (
         <div className="bg-white rounded-lg shadow-sm border p-6 max-w-md mx-auto">
-            <h2 className="text-xl font-bold text-center mb-6">Track Your Order</h2>
-
-            <div className="space-y-4">
-                <div className="flex space-x-4 mb-4">
-                    <button
-                        type="button"
-                        onClick={() => setLookupType('order')}
-                        className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${lookupType === 'order'
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
-                    >
-                        Order ID
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setLookupType('phone')}
-                        className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${lookupType === 'phone'
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
-                    >
-                        Phone Number
-                    </button>
-                </div>
-
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    {lookupType === 'order' ? (
-                        <input
-                            type="text"
-                            placeholder="Enter order ID (e.g., LD001)"
-                            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            value={orderId}
-                            onChange={(e) => setOrderId(e.target.value)}
-                            required
-                        />
-                    ) : (
-                        <input
-                            type="tel"
-                            placeholder="Enter phone number"
-                            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
-                            required
-                        />
-                    )}
-
-                    <button
-                        type="submit"
-                        className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors"
-                    >
-                        Track Order
-                    </button>
-                </form>
+            <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold">Track Your Order</h2>
+                <Package className="text-blue-500" size={24} />
             </div>
+            <p className="text-gray-600 mb-4">Enter your order ID or phone number to track your laundry</p>
+            
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Search by:</label>
+                    <div className="flex space-x-4">
+                        <label className="flex items-center">
+                            <input
+                                type="radio"
+                                name="searchType"
+                                value="order"
+                                checked={searchType === 'order'}
+                                onChange={(e) => setSearchType(e.target.value)}
+                                className="mr-2"
+                            />
+                            Order ID
+                        </label>
+                        <label className="flex items-center">
+                            <input
+                                type="radio"
+                                name="searchType"
+                                value="phone"
+                                checked={searchType === 'phone'}
+                                onChange={(e) => setSearchType(e.target.value)}
+                                className="mr-2"
+                            />
+                            Phone Number
+                        </label>
+                    </div>
+                </div>
+                
+                <div>
+                    <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder={searchType === 'order' ? 'Enter order ID (e.g., LD001)' : 'Enter phone number'}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                </div>
+                
+                <button
+                    type="submit"
+                    className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors"
+                >
+                    Track Order
+                </button>
+            </form>
         </div>
     );
 };
 
-const StatusProgressTracker = ({ status, eta }) => {
-    const steps = [
-        { key: 'pending', label: 'Order Received', icon: Package },
-        { key: 'in_wash', label: 'In Wash', icon: Clock },
-        { key: 'ready', label: 'Ready', icon: CheckCircle },
-        { key: 'delivered', label: 'Delivered', icon: Truck }
-    ];
-
-    const getCurrentStep = () => {
-        const stepIndex = steps.findIndex(step => step.key === status);
-        return stepIndex !== -1 ? stepIndex : 0;
+const OrderDetails = ({ order, onBack }) => {
+    const getStatusIcon = (status) => {
+        switch (status) {
+            case 'pending': return <Clock className="text-yellow-500" size={20} />;
+            case 'in_wash': return <Package className="text-blue-500" size={20} />;
+            case 'ready': return <CheckCircle className="text-green-500" size={20} />;
+            case 'delivered': return <Truck className="text-gray-500" size={20} />;
+            default: return <Clock className="text-gray-500" size={20} />;
+        }
     };
 
-    const currentStep = getCurrentStep();
-
     return (
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-            <h3 className="text-lg font-semibold mb-6 text-center">Order Status</h3>
+        <div className="bg-white rounded-lg shadow-sm border p-6 max-w-2xl mx-auto">
+            <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold">Order Details</h2>
+                <button
+                    onClick={onBack}
+                    className="text-gray-500 hover:text-gray-700"
+                >
+                    <X size={24} />
+                </button>
+            </div>
 
-            <div className="relative">
-                <div className="flex justify-between items-center mb-8">
-                    {steps.map((step, index) => {
-                        const isActive = index <= currentStep;
-                        const isCurrent = index === currentStep;
-
-                        return (
-                            <div key={step.key} className="flex flex-col items-center flex-1">
-                                <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 transition-colors ${isActive ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-500'
-                                    } ${isCurrent ? 'ring-4 ring-blue-200' : ''}`}>
-                                    <step.icon size={20} />
-                                </div>
-                                <span className={`text-sm text-center ${isActive ? 'text-blue-600 font-medium' : 'text-gray-500'
-                                    }`}>
-                                    {step.label}
-                                </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                    <div>
+                        <h3 className="text-lg font-semibold mb-2">Order Information</h3>
+                        <div className="space-y-2">
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Order ID:</span>
+                                <span className="font-medium">{order.id}</span>
                             </div>
-                        );
-                    })}
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Customer:</span>
+                                <span className="font-medium">{order.customer}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Phone:</span>
+                                <span className="font-medium">{order.phone}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Weight:</span>
+                                <span className="font-medium">{order.weight}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Total:</span>
+                                <span className="font-medium">${order.total}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div className="absolute top-6 left-6 right-6 h-0.5 bg-gray-200 -z-10">
-                    <div
-                        className="h-full bg-blue-500 transition-all duration-500"
-                        style={{ width: `${(currentStep / (steps.length - 1)) * 100}%` }}
-                    />
+                <div className="space-y-4">
+                    <div>
+                        <h3 className="text-lg font-semibold mb-2">Status & Timeline</h3>
+                        <div className="space-y-3">
+                            <div className="flex items-center space-x-3">
+                                {getStatusIcon(order.status)}
+                                <div className="flex-1">
+                                    <div className="flex items-center justify-between">
+                                        <span className="font-medium">Current Status</span>
+                                        <StatusBadge status={order.status} />
+                                    </div>
+                                    <p className="text-sm text-gray-600">
+                                        {order.status === 'pending' && 'Your order has been received and is being processed'}
+                                        {order.status === 'in_wash' && 'Your laundry is currently being washed'}
+                                        {order.status === 'ready' && 'Your order is ready for pickup or delivery'}
+                                        {order.status === 'delivered' && 'Your order has been delivered'}
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div className="border-t pt-3">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-gray-600">Estimated Delivery:</span>
+                                    <span className="font-medium">
+                                        {new Date(order.eta).toLocaleDateString()}
+                                    </span>
+                                </div>
+                                <div className="mt-2">
+                                    <LiveCountdown targetDate={order.eta} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            {status !== 'delivered' && (
-                <div className="text-center mt-6 p-4 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-gray-600 mb-2">Estimated delivery time:</p>
-                    <p className="text-lg font-semibold text-blue-600">
-                        <LiveCountdown targetDate={eta} />
-                    </p>
+            <div className="mt-6 pt-6 border-t">
+                <div className="flex items-center space-x-2 text-gray-600">
+                    <Phone size={16} />
+                    <span>Need help? Call us at (555) 123-4567</span>
                 </div>
-            )}
+            </div>
         </div>
     );
 };
@@ -208,11 +234,6 @@ const AppointmentForm = ({ onSubmit, onCancel }) => {
         notes: ''
     });
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
-
     const handleSubmit = (e) => {
         e.preventDefault();
         onSubmit(formData);
@@ -221,44 +242,40 @@ const AppointmentForm = ({ onSubmit, onCancel }) => {
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
                 <input
                     type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
             </div>
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                 <input
                     type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
+                    value={formData.phone}
+                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                    className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
             </div>
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Date & Time</label>
                 <input
                     type="datetime-local"
-                    name="date"
-                    value={formData.date}
-                    onChange={handleChange}
-                    className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
+                    value={formData.date}
+                    onChange={(e) => setFormData({...formData, date: e.target.value})}
+                    className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
             </div>
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Service Type</label>
                 <select
-                    name="service"
                     value={formData.service}
-                    onChange={handleChange}
+                    onChange={(e) => setFormData({...formData, service: e.target.value})}
                     className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                     <option>Wash & Fold</option>
@@ -268,17 +285,16 @@ const AppointmentForm = ({ onSubmit, onCancel }) => {
                 </select>
             </div>
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Special Instructions</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Special Notes</label>
                 <textarea
-                    name="notes"
                     rows="3"
                     value={formData.notes}
-                    onChange={handleChange}
+                    onChange={(e) => setFormData({...formData, notes: e.target.value})}
                     className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Any special requirements..."
+                    placeholder="Any special instructions or requests..."
                 />
             </div>
-            <div className="flex space-x-3 pt-2">
+            <div className="flex space-x-3 pt-4">
                 <button
                     type="button"
                     onClick={onCancel}
@@ -302,21 +318,65 @@ const CustomerPortal = () => {
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
     const [appointmentSuccess, setAppointmentSuccess] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
-    const handleOrderLookup = (searchTerm, type) => {
-        const order = mockOrders.find(o =>
-            type === 'order'
-                ? o.id.toLowerCase() === searchTerm.toLowerCase()
-                : o.phone.includes(searchTerm)
-        );
-        setSelectedOrder(order);
+    const handleOrderLookup = async (searchTerm, type) => {
+        try {
+            setLoading(true);
+            setError('');
+            
+            // Fetch all orders and filter client-side for now
+            // In a real app, you'd have a specific API endpoint for order lookup
+            const response = await fetch('/api/orders');
+            const orders = await response.json();
+            
+            const order = orders.find(o =>
+                type === 'order'
+                    ? o.id.toLowerCase() === searchTerm.toLowerCase()
+                    : o.phone.includes(searchTerm)
+            );
+            
+            if (order) {
+                setSelectedOrder(order);
+            } else {
+                setError('Order not found. Please check your order ID or phone number.');
+            }
+        } catch (error) {
+            console.error('Error looking up order:', error);
+            setError('Failed to look up order. Please try again.');
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleBookAppointment = (formData) => {
-        // In a real app, you'd send this to your backend
-        console.log('Booking appointment:', formData);
-        setIsAppointmentModalOpen(false);
-        setAppointmentSuccess(true);
+    const handleBookAppointment = async (formData) => {
+        try {
+            const response = await fetch('/api/appointments', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    customer: formData.name,
+                    phone: formData.phone,
+                    date: formData.date,
+                    service: formData.service,
+                    notes: formData.notes,
+                    status: 'pending'
+                }),
+            });
+
+            if (response.ok) {
+                setIsAppointmentModalOpen(false);
+                setAppointmentSuccess(true);
+            } else {
+                setError('Failed to book appointment. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error booking appointment:', error);
+            setError('Failed to book appointment. Please try again.');
+        }
     };
 
     return (
@@ -327,9 +387,22 @@ const CustomerPortal = () => {
                     <p className="text-gray-600">Track your order or book an appointment</p>
                 </div>
 
+                {error && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 max-w-md mx-auto">
+                        {error}
+                    </div>
+                )}
+
                 {!selectedOrder ? (
                     <div className="space-y-6">
                         <OrderLookupForm onLookup={handleOrderLookup} />
+
+                        {loading && (
+                            <div className="text-center py-8">
+                                <Loader className="mx-auto animate-spin text-blue-500 mb-4" size={32} />
+                                <p className="text-gray-600">Looking up your order...</p>
+                            </div>
+                        )}
 
                         <div className="bg-white rounded-lg shadow-sm border p-6 max-w-md mx-auto">
                             <div className="flex items-center justify-between mb-4">
@@ -347,87 +420,47 @@ const CustomerPortal = () => {
                         </div>
                     </div>
                 ) : (
-                    <div className="space-y-6">
-                        <div className="text-center">
+                    <OrderDetails order={selectedOrder} onBack={() => setSelectedOrder(null)} />
+                )}
+
+                {/* Appointment Modal */}
+                {isAppointmentModalOpen && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                        <div className="bg-white rounded-lg max-w-md w-full p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-xl font-bold">Book Appointment</h2>
+                                <button
+                                    onClick={() => setIsAppointmentModalOpen(false)}
+                                    className="text-gray-500 hover:text-gray-700"
+                                >
+                                    <X size={24} />
+                                </button>
+                            </div>
+                            <AppointmentForm
+                                onSubmit={handleBookAppointment}
+                                onCancel={() => setIsAppointmentModalOpen(false)}
+                            />
+                        </div>
+                    </div>
+                )}
+
+                {/* Success Modal */}
+                {appointmentSuccess && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                        <div className="bg-white rounded-lg max-w-md w-full p-6 text-center">
+                            <CheckCircle className="mx-auto text-green-500 mb-4" size={48} />
+                            <h3 className="text-xl font-semibold mb-2">Thank You!</h3>
+                            <p className="text-gray-600 mb-6">Your appointment has been successfully booked. We'll contact you to confirm the details.</p>
                             <button
-                                onClick={() => setSelectedOrder(null)}
-                                className="text-blue-500 hover:text-blue-600 text-sm font-medium"
+                                onClick={() => setAppointmentSuccess(false)}
+                                className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600"
                             >
-                                ← Back to Services
+                                Close
                             </button>
-                        </div>
-
-                        <div className="bg-white rounded-lg shadow-sm border p-6 max-w-md mx-auto">
-                            <h3 className="text-lg font-semibold mb-4">Order Details</h3>
-                            <div className="space-y-2 text-sm">
-                                <div className="flex justify-between">
-                                    <span className="text-gray-600">Order ID:</span>
-                                    <span className="font-medium">{selectedOrder.id}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-600">Customer:</span>
-                                    <span className="font-medium">{selectedOrder.customer}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-600">Weight:</span>
-                                    <span className="font-medium">{selectedOrder.weight}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-600">Total:</span>
-                                    <span className="font-medium">${selectedOrder.total}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <StatusProgressTracker status={selectedOrder.status} eta={selectedOrder.eta} />
-
-                        <div className="bg-white rounded-lg shadow-sm border p-6 max-w-md mx-auto">
-                            <h3 className="text-lg font-semibold mb-4">Need Help?</h3>
-                            <div className="space-y-3">
-                                <div className="flex items-center space-x-3">
-                                    <Phone size={16} className="text-gray-500" />
-                                    <span className="text-sm">Call us: (555) 123-4567</span>
-                                </div>
-                                <div className="flex items-center space-x-3">
-                                    <Mail size={16} className="text-gray-500" />
-                                    <span className="text-sm">Email: support@laundrytracker.com</span>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 )}
             </div>
-
-            {/* Book Appointment Modal */}
-            <Modal
-                isOpen={isAppointmentModalOpen}
-                onClose={() => setIsAppointmentModalOpen(false)}
-                title="Book Appointment"
-            >
-                <AppointmentForm
-                    onSubmit={handleBookAppointment}
-                    onCancel={() => setIsAppointmentModalOpen(false)}
-                />
-            </Modal>
-
-            {/* Appointment Success Modal */}
-            <Modal
-                isOpen={appointmentSuccess}
-                onClose={() => setAppointmentSuccess(false)}
-                title="Appointment Booked!"
-            >
-                <div className="text-center p-6">
-                    <CheckCircle className="mx-auto text-green-500 mb-4" size={48} />
-                    <h3 className="text-xl font-semibold mb-2">Thank You!</h3>
-                    <p className="text-gray-600 mb-6">Your appointment has been successfully booked. We'll contact you to confirm the details.</p>
-                    <button
-                        onClick={() => setAppointmentSuccess(false)}
-                        className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600"
-                    >
-                        Close
-                    </button>
-                </div>
-            </Modal>
         </div>
     );
 };

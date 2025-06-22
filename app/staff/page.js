@@ -17,16 +17,9 @@ import {
     Mail,
     Calendar,
     Weight,
-    DollarSign
+    DollarSign,
+    Loader
 } from 'lucide-react';
-
-// Mock data for staff tasks
-const mockTasks = [
-    { id: 'LD001', customer: 'John Doe', phone: '+1234567890', weight: '5kg', status: 'pending', eta: '2024-06-19T10:00:00Z', total: 45.00, address: '123 Main St, City' },
-    { id: 'LD002', customer: 'Jane Smith', phone: '+1234567891', weight: '3kg', status: 'in_wash', eta: '2024-06-19T14:00:00Z', total: 35.00, address: '456 Oak Ave, City' },
-    { id: 'LD003', customer: 'Bob Wilson', phone: '+1234567892', weight: '7kg', status: 'ready', eta: '2024-06-19T16:00:00Z', total: 65.00, address: '789 Pine Rd, City' },
-    { id: 'LD004', customer: 'Alice Johnson', phone: '+1234567893', weight: '4kg', status: 'ready', eta: '2024-06-18T18:00:00Z', total: 40.00, address: '321 Elm St, City' }
-];
 
 // Utility Components
 const StatusBadge = ({ status }) => {
@@ -396,13 +389,46 @@ const DeliveriesView = ({ tasks, onStatusUpdate }) => {
 // Main Staff Page Component
 export default function StaffPage() {
     const [activeTab, setActiveTab] = useState('tasks');
-    const [tasks, setTasks] = useState(mockTasks);
+    const [tasks, setTasks] = useState([]);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [loading, setLoading] = useState(true);
 
-    const handleStatusUpdate = (taskId, newStatus) => {
-        setTasks(prev => prev.map(task =>
-            task.id === taskId ? { ...task, status: newStatus } : task
-        ));
+    const fetchTasks = async () => {
+        try {
+            setLoading(true);
+            const response = await fetch('/api/orders');
+            const orders = await response.json();
+            setTasks(orders);
+        } catch (error) {
+            console.error('Error fetching tasks:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchTasks();
+    }, []);
+
+    const handleStatusUpdate = async (taskId, newStatus) => {
+        try {
+            const response = await fetch(`/api/orders/${taskId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ status: newStatus }),
+            });
+
+            if (response.ok) {
+                // Refresh the data to get the updated task
+                await fetchTasks();
+            } else {
+                console.error('Failed to update task status');
+            }
+        } catch (error) {
+            console.error('Error updating task status:', error);
+        }
     };
 
     const renderContent = () => {
@@ -417,6 +443,17 @@ export default function StaffPage() {
                 return <TaskListView tasks={tasks} onStatusUpdate={handleStatusUpdate} />;
         }
     };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <Loader className="mx-auto animate-spin text-green-500 mb-4" size={48} />
+                    <p className="text-gray-600">Loading tasks...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gray-50">

@@ -6,7 +6,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../app/generated/prisma"
 } 
 
 datasource db {
@@ -21,6 +20,8 @@ model User {
   password String
   role     Role     @default(CUSTOMER)
   jobs     LaundryJob[]
+  orders   Order[]
+  appointments Appointment[]
 }
 
 model LaundryJob {
@@ -31,6 +32,29 @@ model LaundryJob {
   status            JobStatus
   estimatedDelivery DateTime
   createdAt         DateTime @default(now())
+}
+
+model Order {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  customer String
+  phone    String
+  weight   String
+  status   String
+  eta      DateTime
+  total    Float
+  createdAt DateTime @default(now())
+}
+
+model Appointment {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  customer        String
+  phone           String
+  date            DateTime
+  service         String
+  notes           String?
+  status          String
+  rejectionReason String?
+  createdAt       DateTime @default(now())
 }
 
 enum Role {

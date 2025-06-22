@@ -26,56 +26,105 @@ export default function AdminDashboard() {
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [appointmentSuccess, setAppointmentSuccess] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const fetchOrdersAndAppointments = async () => {
+    try {
+      setLoading(true);
+      const [ordersRes, apptRes] = await Promise.all([
+        fetch('/api/orders'),
+        fetch('/api/appointments')
+      ]);
+      const [ordersData, appointmentsData] = await Promise.all([
+        ordersRes.json(),
+        apptRes.json()
+      ]);
+      setOrders(ordersData);
+      setAppointments(appointmentsData);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchOrdersAndAppointments = async () => {
-      try {
-        const [ordersRes, apptRes] = await Promise.all([
-          fetch('/api/orders'),
-          fetch('/api/appointments')
-        ]);
-        const [ordersData, appointmentsData] = await Promise.all([
-          ordersRes.json(),
-          apptRes.json()
-        ]);
-        setOrders(ordersData);
-        setAppointments(appointmentsData);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
-
     fetchOrdersAndAppointments();
   }, []);
 
-  const handleStatusUpdate = (orderId, newStatus) => {
-    setOrders(prev => prev.map(order =>
-      order.id === orderId ? { ...order, status: newStatus } : order
-    ));
+  const handleStatusUpdate = async (orderId, newStatus) => {
+    try {
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (response.ok) {
+        // Refresh the data to get the updated order
+        await fetchOrdersAndAppointments();
+      } else {
+        console.error('Failed to update order status');
+      }
+    } catch (error) {
+      console.error('Error updating order status:', error);
+    }
   };
 
-  const handleAppointmentStatusUpdate = (apptId, newStatus, rejectionReason = '') => {
-    setAppointments(prev => prev.map(appt =>
-      appt.id === apptId
-        ? { ...appt, status: newStatus, ...(rejectionReason && { rejectionReason }) }
-        : appt
-    ));
+  const handleAppointmentStatusUpdate = async (apptId, newStatus, rejectionReason = '') => {
+    try {
+      const response = await fetch(`/api/appointments/${apptId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          status: newStatus,
+          ...(rejectionReason && { rejectionReason })
+        }),
+      });
+
+      if (response.ok) {
+        // Refresh the data to get the updated appointment
+        await fetchOrdersAndAppointments();
+      } else {
+        console.error('Failed to update appointment status');
+      }
+    } catch (error) {
+      console.error('Error updating appointment status:', error);
+    }
   };
 
-  const handleBookAppointment = (formData) => {
-    const newAppointment = {
-      id: `AP${(appointments.length + 1).toString().padStart(3, '0')}`,
-      customer: formData.name,
-      phone: formData.phone,
-      date: formData.date,
-      service: formData.service,
-      notes: formData.notes,
-      status: 'pending'
-    };
+  const handleBookAppointment = async (formData) => {
+    try {
+      const response = await fetch('/api/appointments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          customer: formData.name,
+          phone: formData.phone,
+          date: formData.date,
+          service: formData.service,
+          notes: formData.notes,
+          status: 'pending'
+        }),
+      });
 
-    setAppointments(prev => [...prev, newAppointment]);
-    setIsAppointmentModalOpen(false);
-    setAppointmentSuccess(true);
+      if (response.ok) {
+        setIsAppointmentModalOpen(false);
+        setAppointmentSuccess(true);
+        // Refresh the data to include the new appointment
+        await fetchOrdersAndAppointments();
+      } else {
+        console.error('Failed to create appointment');
+      }
+    } catch (error) {
+      console.error('Error creating appointment:', error);
+    }
   };
 
   const getPageTitle = () => {
@@ -88,6 +137,17 @@ export default function AdminDashboard() {
       default: return 'Admin Portal';
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="mx-auto animate-spin text-blue-500 mb-4" size={48} />
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
