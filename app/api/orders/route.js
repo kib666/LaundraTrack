@@ -12,7 +12,10 @@ export async function GET() {
     return NextResponse.json(orders);
   } catch (error) {
     console.error('[GET /api/orders] Error:', error);
-    return new Response('Internal Server Error', { status: 500 });
+    return new NextResponse(
+      JSON.stringify({ error: 'Internal Server Error' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
   }
 }
 
@@ -35,6 +38,9 @@ export async function POST(request) {
     return NextResponse.json(order);
   } catch (error) {
     console.error('[POST /api/orders] Error:', error);
-    return new Response('Internal Server Error', { status: 500 });
+    return new NextResponse(
+      JSON.stringify({ error: 'Internal Server Error' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
   }
 }

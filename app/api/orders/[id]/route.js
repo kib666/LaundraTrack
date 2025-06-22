@@ -15,6 +15,9 @@ export async function PATCH(request, { params }) {
     return NextResponse.json(order);
   } catch (error) {
     console.error('[PATCH /api/orders/[id]] Error:', error);
-    return new Response('Internal Server Error', { status: 500 });
+    return new NextResponse(
+      JSON.stringify({ error: 'Internal Server Error' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
   }
 } 

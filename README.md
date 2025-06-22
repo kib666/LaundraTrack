@@ -18,12 +18,13 @@ A comprehensive laundry management system built with Next.js, Prisma, and MongoD
 - **Database**: MongoDB with Prisma ORM
 - **Icons**: Lucide React
 - **Styling**: Tailwind CSS
+- **Package Manager**: pnpm
 
 ## Prerequisites
 
 - Node.js 18+ 
 - MongoDB database (local or cloud)
-- npm or yarn package manager
+- pnpm package manager
 
 ## Quick Start
 
@@ -35,7 +36,7 @@ A comprehensive laundry management system built with Next.js, Prisma, and MongoD
 
 2. **Install dependencies**
    ```bash
-   npm install
+   pnpm install
    ```
 
 3. **Set up environment variables**
@@ -48,22 +49,22 @@ A comprehensive laundry management system built with Next.js, Prisma, and MongoD
 
 4. **Generate Prisma client**
    ```bash
-   npx prisma generate
+   pnpm prisma generate
    ```
 
 5. **Push the database schema**
    ```bash
-   npx prisma db push
+   pnpm prisma db push
    ```
 
 6. **Seed the database with sample data (optional)**
    ```bash
-   npm run seed
+   pnpm run seed
    ```
 
 7. **Start the development server**
    ```bash
-   npm run dev
+   pnpm run dev
    ```
 
 The application will be available at `http://localhost:3000`
@@ -82,7 +83,7 @@ The application will be available at `http://localhost:3000`
 2. **Deploy to Vercel**:
    - Connect your GitHub repository to Vercel
    - Add `DATABASE_URL` environment variable
-   - Deploy automatically
+   - Deploy automatically (Vercel will use pnpm by default if `pnpm-lock.yaml` is present)
 
 3. **Test the application**:
    - Customer portal: `/customer`
@@ -159,7 +160,7 @@ The application uses the following MongoDB collections:
 
 ### Adding New Features
 
-1. **Database Changes**: Update `prisma/schema.prisma` and run `npx prisma db push`
+1. **Database Changes**: Update `prisma/schema.prisma` and run `pnpm prisma db push`
 2. **API Routes**: Create new routes in `app/api/`
 3. **Components**: Add new components in `components/`
 4. **Pages**: Create new pages in `app/`
@@ -168,16 +169,16 @@ The application uses the following MongoDB collections:
 
 ```bash
 # Generate Prisma client after schema changes
-npx prisma generate
+pnpm prisma generate
 
 # Push schema changes to database
-npx prisma db push
+pnpm prisma db push
 
 # Open Prisma Studio (database GUI)
-npx prisma studio
+pnpm prisma studio
 
 # Reset database (⚠️ destructive)
-npx prisma db push --force-reset
+pnpm prisma db push --force-reset
 ```
 
 ## Environment Variables

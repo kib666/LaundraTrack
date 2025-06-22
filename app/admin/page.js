@@ -17,6 +17,7 @@ import AppointmentsTable from '@/components/admin/AppointmentsTable';
 import AppointmentCalendarView from '@/components/admin/AppointmentCalendarView';
 import Modal from '@/components/common/Modal';
 import AppointmentForm from '@/components/common/AppointmentForm';
+import UsersManagementPage from './users/page';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -35,14 +36,23 @@ export default function AdminDashboard() {
         fetch('/api/orders'),
         fetch('/api/appointments')
       ]);
-      const [ordersData, appointmentsData] = await Promise.all([
-        ordersRes.json(),
-        apptRes.json()
-      ]);
-      setOrders(ordersData);
-      setAppointments(appointmentsData);
+
+      if (!ordersRes.ok) {
+        console.error('Failed to fetch orders:', await ordersRes.text());
+      }
+      if (!apptRes.ok) {
+        console.error('Failed to fetch appointments:', await apptRes.text());
+      }
+
+      const ordersData = ordersRes.ok ? await ordersRes.json() : [];
+      const appointmentsData = apptRes.ok ? await apptRes.json() : [];
+      
+      setOrders(Array.isArray(ordersData) ? ordersData : []);
+      setAppointments(Array.isArray(appointmentsData) ? appointmentsData : []);
     } catch (error) {
       console.error('Error fetching data:', error);
+      setOrders([]);
+      setAppointments([]);
     } finally {
       setLoading(false);
     }
@@ -239,11 +249,15 @@ export default function AdminDashboard() {
               </div>
             )}
 
-            {(activeTab === 'reports' || activeTab === 'users') && (
+            {activeTab === 'users' && (
+              <UsersManagementPage />
+            )}
+
+            {activeTab === 'reports' && (
               <div className="bg-white rounded-lg shadow-sm border p-8 text-center">
                 <BarChart3 className="mx-auto text-gray-400 mb-4" size={48} />
                 <h2 className="text-xl font-semibold mb-2">
-                  {activeTab === 'reports' ? 'Reports' : 'Users Management'}
+                  Reports
                 </h2>
                 <p className="text-gray-600">This section is under development</p>
               </div>

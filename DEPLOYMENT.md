@@ -4,6 +4,7 @@
 - Node.js 18+ installed
 - MongoDB database (local or MongoDB Atlas)
 - Git repository connected to your deployment platform
+- pnpm package manager
 
 ## Environment Variables Required
 
@@ -43,8 +44,8 @@ mongodb+srv://username:password@cluster.mongodb.net/laundry-tracker?retryWrites=
    - Add `NODE_ENV` with value `production`
 
 3. **Deploy**
-   - Vercel will automatically deploy on every push to main branch
-   - The build should complete successfully now
+   - Vercel will automatically detect and use `pnpm` because of the `pnpm-lock.yaml` file.
+   - The build should complete successfully.
 
 ### Netlify
 
@@ -53,7 +54,7 @@ mongodb+srv://username:password@cluster.mongodb.net/laundry-tracker?retryWrites=
    - Connect your GitHub repository
 
 2. **Build Settings**
-   - Build command: `npm run build`
+   - Build command: `pnpm run build`
    - Publish directory: `.next`
 
 3. **Environment Variables**
@@ -72,7 +73,7 @@ mongodb+srv://username:password@cluster.mongodb.net/laundry-tracker?retryWrites=
 
 1. **Install Dependencies**
    ```bash
-   npm install
+   pnpm install
    ```
 
 2. **Set up Environment**
@@ -82,22 +83,22 @@ mongodb+srv://username:password@cluster.mongodb.net/laundry-tracker?retryWrites=
 
 3. **Generate Prisma Client**
    ```bash
-   npx prisma generate
+   pnpm prisma generate
    ```
 
 4. **Push Database Schema**
    ```bash
-   npx prisma db push
+   pnpm prisma db push
    ```
 
 5. **Seed Database (Optional)**
    ```bash
-   npm run seed
+   pnpm run seed
    ```
 
 6. **Start Development Server**
    ```bash
-   npm run dev
+   pnpm run dev
    ```
 
 ## Troubleshooting
