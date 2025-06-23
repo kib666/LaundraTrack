@@ -6,32 +6,23 @@ import {
     Package,
     Truck,
     User,
-    CheckCircle,
-    AlertCircle,
     Bell,
     Menu,
-    X,
     Clipboard,
-    MapPin,
-    Phone,
-    Mail,
-    Calendar,
-    Weight,
     TrendingUp,
     Loader
 } from 'lucide-react';
 import Sidebar from '@/components/staff/Sidebar';
 import StatusBadge from '@/components/common/StatusBadge';
 
-// Utility Components
-const TopBar = ({ onMenuToggle }) => {
+const StaffTopBar = ({ title, onMenuToggle }) => {
     return (
         <div className="bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center">
-            <div className="flex items-center space-x-4">
-                <button onClick={onMenuToggle} className="md:hidden">
+            <div className="flex items-center">
+                <button onClick={onMenuToggle} className="md:hidden mr-4">
                     <Menu size={24} />
                 </button>
-                <h1 className="text-2xl font-bold text-gray-800">Staff Dashboard</h1>
+                <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
             </div>
             <div className="flex items-center space-x-4">
                 <Bell className="text-gray-600 hover:text-gray-800 cursor-pointer" size={20} />
@@ -39,7 +30,7 @@ const TopBar = ({ onMenuToggle }) => {
                     <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
                         <User className="text-white" size={16} />
                     </div>
-                    <span className="text-sm font-medium">Staff Member</span>
+                    <span className="text-sm font-medium text-gray-800">Staff Member</span>
                 </div>
             </div>
         </div>
@@ -146,7 +137,7 @@ const OrderListView = ({ orders, onStatusUpdate }) => {
                     ) : (
                         <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
                             <Clipboard size={40} className="mx-auto mb-2 text-gray-300" />
-                            <p>No {statusHeadings[status]} orders</p>
+                            <p>No {statusHeadings[status].toLowerCase()} orders</p>
                         </div>
                     )}
                 </div>
@@ -160,7 +151,6 @@ const DeliveriesView = ({ orders, onStatusUpdate }) => {
 
     return (
         <div className="bg-white rounded-lg shadow-sm border p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Deliveries</h2>
             <div className="overflow-x-auto">
                 <table className="w-full text-left">
                     <thead>
@@ -215,7 +205,6 @@ const ProfileView = () => {
 
     return (
          <div className="bg-white rounded-lg shadow-sm border p-6 max-w-2xl mx-auto">
-            <h2 className="text-xl font-semibold text-gray-800 mb-6">Staff Profile</h2>
             <div className="space-y-4">
                 <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">Full Name</label>
@@ -246,6 +235,7 @@ export default function StaffPage() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('tasks');
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const fetchOrders = async () => {
         setLoading(true);
@@ -284,6 +274,12 @@ export default function StaffPage() {
         }
     };
 
+    const pageTitle = {
+        tasks: 'My Tasks',
+        deliveries: 'Deliveries',
+        profile: 'My Profile'
+    }[activeTab];
+
     const renderContent = () => {
         if (loading) {
             return (
@@ -312,12 +308,28 @@ export default function StaffPage() {
 
     return (
         <div className="flex h-screen bg-gray-100">
-            <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
-            <div className="flex-1 flex flex-col overflow-hidden">
-                <div className="bg-white shadow-sm border-b p-4">
-                    <h1 className="text-2xl font-bold text-gray-800">Staff Dashboard</h1>
+            <div className="hidden md:block w-64 flex-shrink-0">
+                <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+            </div>
+
+             {isMobileMenuOpen && (
+                <div className="fixed inset-0 z-40 md:hidden">
+                    <div 
+                        className="absolute inset-0 bg-black bg-opacity-50" 
+                        onClick={() => setIsMobileMenuOpen(false)}
+                    />
+                    <div className="relative w-64 h-full bg-white">
+                         <Sidebar activeTab={activeTab} onTabChange={(tab) => {
+                            setActiveTab(tab);
+                            setIsMobileMenuOpen(false);
+                        }} />
+                    </div>
                 </div>
-                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
+            )}
+
+            <div className="flex-1 flex flex-col overflow-y-auto">
+                <StaffTopBar title={pageTitle} onMenuToggle={() => setIsMobileMenuOpen(true)} />
+                <main className="flex-1 p-6">
                     {renderContent()}
                 </main>
             </div>
