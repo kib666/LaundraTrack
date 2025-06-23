@@ -4,6 +4,11 @@ import { prisma } from '@/lib/prisma';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request, { params }) {
+  try {
+    await request.json();
+  } catch (e) {
+    // Do nothing
+  }
   const { userId } = params;
 
   if (!userId) {

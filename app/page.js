@@ -1,21 +1,33 @@
 'use client';
 
 import Link from 'next/link';
-import {
-  Package,
-  Users,
-  User,
-  Truck,
-  Clock,
-  CheckCircle,
-  ArrowRight,
-  Phone,
-  Mail,
-  MapPin,
-  Star
-} from 'lucide-react';
+import { Box, User, Users, Truck, ArrowRight, Package, Phone, Mail, MapPin, Clock } from 'lucide-react';
 
 export default function HomePage() {
+  const portalCards = [
+    {
+      href: '/customer',
+      icon: User,
+      title: 'Customer Portal',
+      description: 'Track your orders, book appointments, and manage your laundry services easily.',
+      color: 'blue',
+    },
+    {
+      href: '/admin',
+      icon: Users,
+      title: 'Admin Portal',
+      description: 'Manage orders, appointments, staff, and business operations from one dashboard.',
+      color: 'purple',
+    },
+    {
+      href: '/staff',
+      icon: Truck,
+      title: 'Staff Portal',
+      description: 'View assigned tasks, update order status, and manage daily operations efficiently.',
+      color: 'green',
+    },
+  ];
+
   const features = [
     {
       icon: Package,
@@ -39,42 +51,49 @@ export default function HomePage() {
     }
   ];
 
-  const testimonials = [
-    {
-      name: 'Sarah Johnson',
-      role: 'Business Owner',
-      content: 'This system has transformed how we manage our laundry business. So much more organized!',
-      rating: 5
+  const cardColors = {
+    blue: {
+      bg: 'bg-blue-50',
+      iconBg: 'bg-blue-100',
+      iconText: 'text-blue-600',
+      linkText: 'text-blue-600',
     },
-    {
-      name: 'Mike Chen',
-      role: 'Regular Customer',
-      content: 'Love being able to track my orders online. Makes everything so convenient.',
-      rating: 5
-    }
-  ];
+    purple: {
+      bg: 'bg-purple-50',
+      iconBg: 'bg-purple-100',
+      iconText: 'text-purple-600',
+      linkText: 'text-purple-600',
+    },
+    green: {
+      bg: 'bg-green-50',
+      iconBg: 'bg-green-100',
+      iconText: 'text-green-600',
+      linkText: 'text-green-600',
+    },
+  };
+
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gray-50 text-gray-800">
       {/* Navigation */}
-      <nav className="bg-white shadow-sm">
+      <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <Package className="text-blue-600" size={28} />
+            <Link href="/" className="flex items-center space-x-2">
+              <Box className="text-blue-600" size={28} />
               <span className="text-xl font-bold text-gray-800">Laundry Tracker</span>
-            </div>
+            </Link>
 
-            <div className="hidden md:flex items-center space-x-6">
-              <Link href="#features" className="text-gray-600 hover:text-gray-900">
+            <div className="hidden md:flex items-center space-x-8">
+              <Link href="#features" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">
                 Features
               </Link>
-              <Link href="#contact" className="text-gray-600 hover:text-gray-900">
+              <Link href="#contact" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">
                 Contact
               </Link>
               <Link
                 href="/customer"
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                className="bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md"
               >
                 Track Order
               </Link>
@@ -84,200 +103,128 @@ export default function HomePage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="py-20 px-4">
-        <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-            M1G Laundry
-            <span className="text-blue-600 block">Management System</span>
-          </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+      <main>
+        <section className="bg-white">
+          <div className="max-w-7xl mx-auto py-24 px-4 sm:px-6 lg:px-8 text-center bg-gradient-to-b from-blue-50 to-white">
+            <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 leading-tight">
+              M1G Laundry
+              <span className="block text-blue-600 mt-2">Management System</span>
+            </h1>
+            <p className="mt-6 text-lg text-gray-600 max-w-2xl mx-auto">
               Project for the Course of Parallel And Distributed Computing
-            
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link
-              href="/customer"
-              className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors flex items-center space-x-2"
-            >
-              <span>Track Your Order</span>
-              <ArrowRight size={20} />
-            </Link>
-            <Link
-              href="/admin"
-              className="border-2 border-blue-600 text-blue-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-50 transition-colors"
-            >
-              Business Login
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Role Access Cards */}
-      <section className="py-16 px-4 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
-            Access Your Portal
-          </h2>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Customer Portal */}
-            <Link href="/customer" className="group">
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-8 rounded-xl shadow-sm hover:shadow-md transition-all group-hover:scale-105">
-                <div className="bg-blue-600 w-16 h-16 rounded-lg flex items-center justify-center mb-6">
-                  <User className="text-white" size={28} />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Customer Portal</h3>
-                <p className="text-gray-600 mb-6">
-                  Track your orders, book appointments, and manage your laundry services easily.
-                </p>
-                <div className="flex items-center text-blue-600 font-semibold">
-                  <span>Access Portal</span>
-                  <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" size={16} />
-                </div>
-              </div>
-            </Link>
-
-            {/* Admin Portal */}
-            <Link href="/admin" className="group">
-              <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-8 rounded-xl shadow-sm hover:shadow-md transition-all group-hover:scale-105">
-                <div className="bg-purple-600 w-16 h-16 rounded-lg flex items-center justify-center mb-6">
-                  <Users className="text-white" size={28} />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Admin Portal</h3>
-                <p className="text-gray-600 mb-6">
-                  Manage orders, appointments, staff, and business operations from one dashboard.
-                </p>
-                <div className="flex items-center text-purple-600 font-semibold">
-                  <span>Access Portal</span>
-                  <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" size={16} />
-                </div>
-              </div>
-            </Link>
-
-            {/* Staff Portal */}
-            <Link href="/staff" className="group">
-              <div className="bg-gradient-to-br from-green-50 to-green-100 p-8 rounded-xl shadow-sm hover:shadow-md transition-all group-hover:scale-105">
-                <div className="bg-green-600 w-16 h-16 rounded-lg flex items-center justify-center mb-6">
-                  <Truck className="text-white" size={28} />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Staff Portal</h3>
-                <p className="text-gray-600 mb-6">
-                  View assigned tasks, update order status, and manage daily operations efficiently.
-                </p>
-                <div className="flex items-center text-green-600 font-semibold">
-                  <span>Access Portal</span>
-                  <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" size={16} />
-                </div>
-              </div>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section id="features" className="py-16 px-4 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Everything You Need to Manage Your Laundry Business
-            </h2>
-            <p className="text-xl text-gray-600">
-              Powerful features designed to streamline operations and improve customer satisfaction
             </p>
-          </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => (
-              <div key={index} className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                <div className="bg-blue-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
-                  <feature.icon className="text-blue-600" size={24} />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  {feature.title}
-                </h3>
-                <p className="text-gray-600">
-                  {feature.description}
-                </p>
-              </div>
-            ))}
+            <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Link
+                href="/customer"
+                className="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center space-x-2"
+              >
+                <span>Track Your Order</span>
+                <ArrowRight size={20} />
+              </Link>
+              <Link
+                href="/admin"
+                className="bg-white text-blue-600 border-2 border-gray-300 px-8 py-3 rounded-lg text-lg font-semibold hover:bg-gray-100 transition-all duration-300 transform hover:scale-105"
+              >
+                Business Login
+              </Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Testimonials */}
-      <section className="py-16 px-4 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              What Our Users Say
+        {/* Role Access Cards */}
+        <section className="py-20 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-4xl font-bold text-center text-gray-900 mb-12">
+              Access Your Portal
             </h2>
-          </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {testimonials.map((testimonial, index) => (
-              <div key={index} className="bg-gray-50 p-6 rounded-xl">
-                <div className="flex items-center mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="text-yellow-400 fill-current" size={20} />
-                  ))}
-                </div>
-                <p className="text-gray-700 mb-4 italic">
-                  "{testimonial.content}"
-                </p>
-                <div>
-                  <p className="font-semibold text-gray-900">{testimonial.name}</p>
-                  <p className="text-sm text-gray-600">{testimonial.role}</p>
-                </div>
+            <div className="grid md:grid-cols-3 gap-8">
+              {portalCards.map((card) => {
+                const colors = cardColors[card.color];
+                return (
+                  <Link href={card.href} key={card.title} className="group block">
+                    <div className={`p-8 rounded-xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col ${colors.bg}`}>
+                      <div className={`w-16 h-16 rounded-lg flex items-center justify-center mb-6 ${colors.iconBg}`}>
+                        <card.icon className={colors.iconText} size={32} />
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-3">{card.title}</h3>
+                      <p className="text-gray-600 mb-6 flex-grow">{card.description}</p>
+                      <div className={`flex items-center font-semibold ${colors.linkText}`}>
+                        <span>Access Portal</span>
+                        <ArrowRight className="ml-2 group-hover:translate-x-1.5 transition-transform" size={18} />
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* Features Section */}
+        <section id="features" className="py-20 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <h2 className="text-base font-semibold text-blue-600 tracking-wide uppercase">Features</h2>
+              <p className="mt-2 text-3xl font-extrabold text-gray-900 tracking-tight sm:text-4xl">
+                Everything You Need to Manage Your Laundry
+              </p>
+              <p className="mt-4 max-w-2xl mx-auto text-xl text-gray-500">
+                Powerful features designed to streamline operations and improve customer satisfaction.
+              </p>
+            </div>
+
+            <div className="mt-12">
+              <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+                {features.map((feature) => (
+                  <div key={feature.title} className="pt-6">
+                    <div className="flow-root bg-gray-50 rounded-lg px-6 pb-8">
+                      <div className="-mt-6">
+                        <div>
+                          <span className="inline-flex items-center justify-center p-3 bg-blue-500 rounded-md shadow-lg">
+                            <feature.icon className="h-6 w-6 text-white" aria-hidden="true" />
+                          </span>
+                        </div>
+                        <h3 className="mt-8 text-lg font-medium text-gray-900 tracking-tight">{feature.title}</h3>
+                        <p className="mt-5 text-base text-gray-500">{feature.description}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Contact Section */}
-      <section id="contact" className="py-16 px-4 bg-blue-600 text-white">
-        <div className="max-w-7xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-8">Get Started Today</h2>
-          <p className="text-xl mb-8 opacity-90">
-            Ready to streamline your laundry business? Contact us to learn more.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-8 justify-center items-center mb-8">
-            <div className="flex items-center space-x-3">
-              <Phone size={24} />
-              <span className="text-lg">+639696438031</span>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Mail size={24} />
-              <span className="text-lg">mamdavid@tip.edu.ph</span>
-            </div>
-            <div className="flex items-center space-x-3">
-              <MapPin size={24} />
-              <span className="text-lg">1338 Arlegui St, Quiapo, City Of Manila, 1001 Metro Manila</span>
             </div>
           </div>
+        </section>
 
-          <Link
-            href="/customer"
-            className="bg-white text-blue-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-100 transition-colors inline-flex items-center space-x-2"
-          >
-            <span>Start Tracking Orders</span>
-            <ArrowRight size={20} />
-          </Link>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-8 px-4">
-        <div className="max-w-7xl mx-auto text-center">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <Package size={24} />
-            <span className="text-xl font-bold">M1G Laundry Tracker</span>
+        {/* Contact Section */}
+        <section id="contact" className="py-20 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 className="text-3xl font-extrabold text-gray-900">Get in Touch</h2>
+            <p className="mt-4 text-lg text-gray-600">
+              Have questions? We'd love to hear from you.
+            </p>
+            <div className="mt-8 flex flex-col sm:flex-row gap-8 justify-center items-center text-lg">
+              <div className="flex items-center space-x-3 text-gray-800">
+                <Phone />
+                <span>+639696438031</span>
+              </div>
+              <div className="flex items-center space-x-3 text-gray-800">
+                <Mail />
+                <span>mamdavid@tip.edu.ph</span>
+              </div>
+              <div className="flex items-center space-x-3 text-gray-800">
+                <MapPin />
+                <span>Manila, Philippines</span>
+              </div>
+            </div>
           </div>
-          <p className="text-gray-400">
-            © 2025 M1G Laundry Tracker. All rights reserved.
-          </p>
+        </section>
+      </main>
+
+      <footer className="bg-white border-t border-gray-200">
+        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center text-gray-500">
+          <p>&copy; {new Date().getFullYear()} M1G Laundry Systems. All rights reserved.</p>
         </div>
       </footer>
     </div>
