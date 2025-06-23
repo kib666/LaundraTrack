@@ -5,6 +5,9 @@ import { prisma } from '@/lib/prisma';
 export async function GET() {
   try {
     const orders = await prisma.order.findMany({
+      include: {
+        user: true,
+      },
       orderBy: {
         createdAt: 'desc'
       }
@@ -24,58 +27,73 @@ export async function POST(request) {
     const body = await request.json();
     const {
       customerType,
-      customerId, // Use customerId for clarity
+      userId,
       customerName,
       customerPhone,
       customerEmail, // Added email
       notes,
+      service, // Added service
       // Default values for fields not provided by customer form
       weight = 0,
-      total = 0,
+      total, // Allow total to be undefined
       status = 'PENDING',
       eta = null,
+      deliveryAddress
     } = body;
 
     let finalCustomerId;
 
-    if (customerType === 'existing' && customerId) {
-      // Logic for existing customer (used by admin form)
-      finalCustomerId = customerId;
+    if (customerType === 'existing' && userId) {
+      finalCustomerId = userId;
     } else {
-      // Logic for new customer (used by customer schedule pickup form)
-      // We can also check if a user with this email or phone already exists
       let user = await prisma.user.findFirst({
-        where: { OR: [{ email: customerEmail }, { phone: customerPhone }] },
+        where: { OR: [{ email: customerEmail }, { phoneNumber: customerPhone }] },
       });
 
       if (user) {
-        // User exists, link the order to them
         finalCustomerId = user.id;
       } else {
-        // User does not exist, create a new one
         const newUser = await prisma.user.create({
           data: {
             name: customerName,
             email: customerEmail,
-            phone: customerPhone,
+            phoneNumber: customerPhone,
             role: 'CUSTOMER',
           },
         });
         finalCustomerId = newUser.id;
       }
     }
+    
+    const weightFloat = parseFloat(weight);
+    let finalTotal = parseFloat(total);
+
+    if (isNaN(finalTotal)) {
+        const serviceData = {
+            'Wash & Fold': 40,
+            'Dry Cleaning': 150,
+            'Wash & Iron': 80,
+            'Express Service': 100
+        };
+        const pricePerUnit = serviceData[service] || 40;
+        finalTotal = service === 'Express Service' 
+            ? (weightFloat * serviceData['Wash & Fold']) + pricePerUnit 
+            : weightFloat * pricePerUnit;
+    }
 
     const order = await prisma.order.create({
       data: {
-        weight: parseFloat(weight),
-        total: parseFloat(total),
-        status,
+        weight: weightFloat,
+        total: finalTotal,
+        status: status,
+        service: service || 'Wash & Fold',
         eta: eta ? new Date(eta) : null,
+        deliveryAddress,
         notes,
-        customerId: finalCustomerId,
+        userId: finalCustomerId,
       },
       include: {
-        customer: true, // Return the full customer details
+        user: true,
       },
     });
     

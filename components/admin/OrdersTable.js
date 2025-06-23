@@ -8,9 +8,10 @@ const OrdersTable = ({ orders, onStatusUpdate }) => {
     const [statusFilter, setStatusFilter] = useState('all');
 
     const filteredOrders = orders.filter(order => {
-        const matchesSearch = order.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        const customerName = order.user?.name || '';
+        const matchesSearch = customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
             order.id.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
+        const matchesStatus = statusFilter === 'all' || order.status.toLowerCase().replace(/_/g, ' ') === statusFilter;
         return matchesSearch && matchesStatus;
     });
 
@@ -63,22 +64,22 @@ const OrdersTable = ({ orders, onStatusUpdate }) => {
                                 <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{order.id}</td>
                                 <td className="px-4 py-4 whitespace-nowrap">
                                     <div>
-                                        <div className="text-sm font-medium text-gray-900">{order.customer}</div>
-                                        <div className="text-sm text-gray-500">{order.phone}</div>
+                                        <div className="text-sm font-medium text-gray-900">{order.user?.name || 'N/A'}</div>
+                                        <div className="text-sm text-gray-500">{order.user?.phoneNumber || 'N/A'}</div>
                                     </div>
                                 </td>
-                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{order.weight}</td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{order.weight} kg</td>
                                 <td className="px-4 py-4 whitespace-nowrap">
                                     <select
                                         className="text-sm border-none bg-transparent focus:outline-none text-gray-900"
                                         value={order.status}
                                         onChange={(e) => onStatusUpdate(order.id, e.target.value)}
                                     >
-                                        <option value="Received">Received</option>
-                                        <option value="In Wash">In Wash</option>
-                                        <option value="Ready">Ready</option>
-                                        <option value="Delivered">Delivered</option>
-                                        <option value="Cancelled">Cancelled</option>
+                                        <option value="PENDING">Pending</option>
+                                        <option value="IN_PROGRESS">In Wash</option>
+                                        <option value="COMPLETED">Ready</option>
+                                        <option value="DELIVERED">Delivered</option>
+                                        <option value="CANCELLED">Cancelled</option>
                                     </select>
                                 </td>
                                 <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">

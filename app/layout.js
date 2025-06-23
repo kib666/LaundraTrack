@@ -1,5 +1,6 @@
 import { Inter } from 'next/font/google'
 import './globals.css'
+import NextAuthSessionProvider from '@/components/common/SessionProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -19,7 +20,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={`${inter.className} antialiased`}>
-        {children}
+        <NextAuthSessionProvider>{children}</NextAuthSessionProvider>
       </body>
     </html>
   )

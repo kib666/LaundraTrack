@@ -1,4 +1,6 @@
-import React from 'react';
+'use client';
+
+import Link from 'next/link';
 import {
     Clipboard,
     Truck,
@@ -10,32 +12,31 @@ import {
     Calendar
 } from 'lucide-react';
 
-const StaffSidebar = ({ activeTab, onTabChange }) => {
-    const staffItems = [
-        { key: 'dashboard', label: 'Dashboard', icon: Home },
+const Sidebar = ({ activeTab, onTabChange }) => {
+    const menuItems = [
         { key: 'tasks', label: 'My Tasks', icon: Clipboard },
         { key: 'deliveries', label: 'Deliveries', icon: Truck },
-        { key: 'schedule', label: 'My Schedule', icon: Calendar },
-        { key: 'completed', label: 'Completed', icon: CheckCircle },
         { key: 'profile', label: 'Profile', icon: User }
     ];
 
     return (
-        <div className="bg-white shadow-sm border-r h-full">
+        <div className="w-64 bg-white shadow-md h-screen">
             <div className="p-4 border-b">
-                <h2 className="text-lg font-bold text-gray-800">Laundry Tracker</h2>
-                <p className="text-sm text-gray-600">Staff Portal</p>
+                <Link href="/" legacyBehavior>
+                    <a className="text-xl font-bold text-gray-800">Laundry Tracker</a>
+                </Link>
+                <p className="text-sm text-gray-500">Staff Portal</p>
             </div>
-
             <nav className="p-2">
-                {staffItems.map((item) => (
-                    <button
+                {menuItems.map((item) => (
+                     <button
                         key={item.key}
                         onClick={() => onTabChange(item.key)}
-                        className={`w-full flex items-center space-x-3 px-3 py-2 text-left rounded-lg transition-colors ${activeTab === item.key
-                            ? 'bg-blue-50 text-blue-600'
-                            : 'text-gray-700 hover:bg-gray-100'
-                            }`}
+                        className={`w-full flex items-center space-x-3 px-3 py-2 text-left rounded-lg transition-colors ${
+                            activeTab === item.key
+                                ? 'bg-green-100 text-green-700'
+                                : 'text-gray-700 hover:bg-gray-100'
+                        }`}
                     >
                         <item.icon size={20} />
                         <span>{item.label}</span>
@@ -44,6 +45,6 @@ const StaffSidebar = ({ activeTab, onTabChange }) => {
             </nav>
         </div>
     );
-};
+}
 
-export default StaffSidebar;
+export default Sidebar;

@@ -37,14 +37,13 @@ model LaundryJob {
 
 model Order {
   id              String    @id @default(auto()) @map("_id") @db.ObjectId
-  customer        String
-  phone           String
   weight          Float
   status          String
   service         String
   deliveryAddress String?
-  eta             DateTime
+  eta             DateTime?
   total           Float
+  notes           String?
   createdAt       DateTime  @default(now())
   userId          String?   @db.ObjectId
   user            User?     @relation(fields: [userId], references: [id])

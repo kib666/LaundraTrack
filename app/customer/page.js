@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useSession, signIn, signOut } from 'next-auth/react';
 import {
     Calendar,
     Clock,
@@ -13,7 +14,13 @@ import {
     CalendarCheck,
     CalendarDays,
     X,
-    Loader
+    Loader,
+    Tag,
+    LogIn,
+    UserPlus,
+    LogOut,
+    History,
+    PlusCircle
 } from 'lucide-react';
 import StatusProgressTracker from '@/components/customer/StatusProgressTracker';
 
@@ -225,6 +232,37 @@ const OrderDetails = ({ order, onBack }) => {
     );
 };
 
+const ServicesAndPricing = () => {
+    const services = [
+        { name: 'Wash & Fold', price: '₱40.00', unit: 'per kg', description: 'Standard washing and folding service for everyday laundry.' },
+        { name: 'Dry Cleaning', price: '₱150.00', unit: 'per item', description: 'For delicate items like suits, dresses, and coats.' },
+        { name: 'Wash & Iron', price: '₱80.00', unit: 'per kg', description: 'Includes washing, drying, and professional ironing.' },
+        { name: 'Express Service', price: '+₱100.00', unit: 'add-on', description: 'Get your laundry done in half the time.' },
+    ];
+
+    return (
+        <div className="bg-white rounded-lg shadow-sm border p-6 max-w-md mx-auto mt-8">
+            <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-800">Our Services & Pricing</h2>
+                <Tag className="text-blue-500" size={24} />
+            </div>
+            <div className="space-y-4">
+                {services.map((service) => (
+                    <div key={service.name} className="border-b pb-4 last:border-b-0">
+                        <div className="flex justify-between items-baseline">
+                            <h3 className="font-semibold text-gray-900">{service.name}</h3>
+                            <p className="text-gray-800 font-medium">
+                                {service.price} <span className="text-sm text-gray-500">/{service.unit}</span>
+                            </p>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">{service.description}</p>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 const SchedulePickupForm = ({ onSubmit, onCancel }) => {
     const [formData, setFormData] = useState({
         name: '',
@@ -324,7 +362,264 @@ const SchedulePickupForm = ({ onSubmit, onCancel }) => {
     );
 };
 
+const AuthForm = ({ isRegister = false }) => {
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setError('');
+        setSuccess('');
+
+        if (isRegister) {
+            // Handle registration
+            const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, phone, password }),
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setSuccess('Registration successful! Please log in.');
+            } else {
+                setError(data.error || 'Registration failed.');
+            }
+        } else {
+            // Handle login
+            const result = await signIn('credentials', {
+                redirect: false,
+                email,
+                password,
+            });
+
+            if (result.error) {
+                setError('Invalid email or password.');
+            }
+            // On successful login, the session will update and the view will change automatically
+        }
+        setIsLoading(false);
+    };
+
+    return (
+        <div className="bg-white rounded-lg shadow-sm border p-6 max-w-md mx-auto">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">{isRegister ? 'Create Account' : 'Welcome Back'}</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                {isRegister && (
+                    <input type="text" placeholder="Full Name" value={name} onChange={(e) => setName(e.target.value)} required className="w-full p-3 border rounded-lg text-gray-900" />
+                )}
+                <input type="email" placeholder="Email Address" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full p-3 border rounded-lg text-gray-900" />
+                {isRegister && (
+                    <input type="tel" placeholder="Phone Number" value={phone} onChange={(e) => setPhone(e.target.value)} required className="w-full p-3 border rounded-lg text-gray-900" />
+                )}
+                <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full p-3 border rounded-lg text-gray-900" />
+                <button type="submit" disabled={isLoading} className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 disabled:bg-blue-300">
+                    {isLoading ? 'Processing...' : (isRegister ? 'Register' : 'Login')}
+                </button>
+                {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+                {success && <p className="text-green-500 text-sm mt-2">{success}</p>}
+            </form>
+        </div>
+    );
+};
+
+const NewOrderForm = ({ userId, onOrderCreated }) => {
+    const [weight, setWeight] = useState('');
+    const [service, setService] = useState('Wash & Fold');
+    const [deliveryAddress, setDeliveryAddress] = useState('');
+    const [eta, setEta] = useState('');
+    const [notes, setNotes] = useState('');
+    const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [estimatedPrice, setEstimatedPrice] = useState(0);
+
+    const serviceOptions = [
+        { name: 'Wash & Fold', price: 40, unit: 'kg' },
+        { name: 'Dry Cleaning', price: 150, unit: 'item' },
+        { name: 'Wash & Iron', price: 80, unit: 'kg' },
+        { name: 'Express Service', price: 100, unit: 'add-on' },
+    ];
+
+    useEffect(() => {
+        const calculatePrice = () => {
+            if (!weight) {
+                setEstimatedPrice(0);
+                return;
+            }
+
+            const selectedService = serviceOptions.find(s => s.name === service);
+            if (!selectedService) return;
+            
+            let price = parseFloat(weight) * selectedService.price;
+
+            if(service === 'Express Service') {
+                // Assuming express is an add-on to a base service, let's take wash & fold for calculation
+                const baseService = serviceOptions.find(s => s.name === 'Wash & Fold');
+                price = (parseFloat(weight) * baseService.price) + selectedService.price;
+            }
+
+            setEstimatedPrice(price);
+        };
+        calculatePrice();
+    }, [weight, service]);
+
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setError('');
+
+        try {
+            const res = await fetch('/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    customerType: 'existing',
+                    userId: userId,
+                    weight: parseFloat(weight),
+                    service,
+                    deliveryAddress,
+                    eta: eta ? new Date(eta) : null,
+                    notes,
+                }),
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Failed to create order.');
+            }
+            
+            // Clear form
+            setWeight('');
+            setNotes('');
+            setService('Wash & Fold');
+            setDeliveryAddress('');
+            setEta('');
+            onOrderCreated();
+
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Service Type</label>
+                <select value={service} onChange={(e) => setService(e.target.value)} className="w-full p-3 border rounded-lg text-gray-900 bg-white">
+                    {serviceOptions.map(s => <option key={s.name}>{s.name}</option>)}
+                </select>
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
+                <input type="number" step="0.1" placeholder="e.g., 5.5" value={weight} onChange={(e) => setWeight(e.target.value)} required className="w-full p-3 border rounded-lg text-gray-900" />
+            </div>
+             {estimatedPrice > 0 && (
+                <div className="p-3 bg-blue-50 rounded-lg text-center">
+                    <p className="text-sm text-gray-600">Estimated Price</p>
+                    <p className="text-xl font-bold text-blue-600">₱{estimatedPrice.toFixed(2)}</p>
+                </div>
+            )}
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Address</label>
+                <input type="text" placeholder="Your full address" value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} required className="w-full p-3 border rounded-lg text-gray-900" />
+            </div>
+             <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Delivery Date</label>
+                <input type="date" value={eta} onChange={(e) => setEta(e.target.value)} required className="w-full p-3 border rounded-lg text-gray-900" />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
+                <textarea placeholder="e.g., Special instructions for delicate items" value={notes} onChange={(e) => setNotes(e.target.value)} rows="3" className="w-full p-3 border rounded-lg text-gray-900" />
+            </div>
+            <button type="submit" disabled={isLoading || !weight} className="w-full bg-green-500 text-white py-3 rounded-lg font-medium hover:bg-green-600 disabled:bg-green-300 disabled:cursor-not-allowed">
+                {isLoading ? 'Submitting...' : 'Submit Order'}
+            </button>
+            {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+        </form>
+    );
+};
+
+const LoggedInDashboard = ({ user }) => {
+    const [orders, setOrders] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const fetchOrders = async () => {
+        // Don't set loading to true here to avoid flicker on re-fetch
+        const res = await fetch(`/api/orders/user/${user.id}`);
+        if (res.ok) {
+            const data = await res.json();
+            setOrders(data);
+        }
+        setIsLoading(false);
+    };
+
+    useEffect(() => {
+        fetchOrders();
+    }, [user.id]);
+    
+    return (
+        <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
+            <div className="max-w-7xl mx-auto">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
+                    <h1 className="text-3xl font-bold text-gray-800 mb-2 sm:mb-0">Welcome, {user.name}!</h1>
+                    <button onClick={() => signOut({ callbackUrl: '/customer' })} className="flex items-center space-x-2 text-gray-600 hover:text-red-600 font-medium p-2 rounded-lg hover:bg-red-100 transition-colors">
+                        <LogOut size={20} />
+                        <span>Logout</span>
+                    </button>
+                </div>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div className="lg:col-span-1 bg-white p-6 rounded-lg shadow-sm border">
+                        <h3 className="text-xl font-semibold mb-4 flex items-center text-gray-800"><PlusCircle size={22} className="mr-2 text-green-600"/>Create New Order</h3>
+                        <NewOrderForm userId={user.id} onOrderCreated={fetchOrders} />
+                    </div>
+
+                    <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm border">
+                        <h3 className="text-xl font-semibold mb-4 flex items-center text-gray-800"><History size={22} className="mr-2 text-blue-600"/>Your Order History</h3>
+                        <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                            {isLoading ? (
+                                <p className="text-gray-500">Loading your orders...</p>
+                            ) : orders.length > 0 ? (
+                                orders.map(order => (
+                                    <div key={order.id} className="border-b border-gray-200 pb-4 last:border-0">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <p className="font-semibold text-lg text-gray-800">₱{order.total.toFixed(2)}</p>
+                                                <p className="font-mono text-xs text-gray-400 mt-1">{order.id}</p>
+                                            </div>
+                                            <StatusBadge status={order.status} />
+                                        </div>
+                                        <div className="text-sm text-gray-600 mt-2 flex justify-between items-center">
+                                           <span>{new Date(order.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                                           <span className="font-medium text-gray-700">{order.weight}kg - {order.service}</span>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-center py-8 px-4 bg-gray-50 rounded-lg">
+                                    <p className="text-gray-600">You haven't placed any orders yet.</p>
+                                    <p className="text-sm text-gray-400 mt-1">Use the form on the left to get started!</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 const CustomerPortal = () => {
+    const { data: session, status } = useSession();
+    const [activeTab, setActiveTab] = useState('track'); // track, login, register
     const [view, setView] = useState('lookup'); // 'lookup', 'details', 'schedule'
     const [order, setOrder] = useState(null);
     const [error, setError] = useState('');
@@ -413,6 +708,22 @@ const CustomerPortal = () => {
         setView('lookup');
     };
 
+    if (status === 'loading') {
+        return (
+            <div className="min-h-screen flex justify-center items-center">
+                <Loader className="animate-spin text-blue-500" size={48} />
+            </div>
+        )
+    }
+
+    if (session) {
+        return (
+            <div className="min-h-screen bg-gray-50">
+                <LoggedInDashboard user={session.user} />
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4">
             {isLoading && (
@@ -420,33 +731,27 @@ const CustomerPortal = () => {
                     <Loader className="animate-spin text-blue-500" size={48} />
                 </div>
             )}
-
-            {view === 'lookup' && (
-                <div className="w-full max-w-md">
-                    <OrderLookupForm
-                        onLookup={handleOrderLookup}
-                        onSchedule={() => setView('schedule')}
-                    />
-                    {error && <p className="mt-4 text-center text-red-500">{error}</p>}
-                    {lastOrder && (
-                        <div className="mt-4 p-4 bg-green-100 text-green-800 rounded-lg text-center">
-                            Pickup scheduled successfully! Your new Order ID is{' '}
-                            <span className="font-bold">{lastOrder.id}</span>.
-                        </div>
-                    )}
+            
+            <div className="w-full max-w-md">
+                <div className="flex border-b mb-4">
+                    <button onClick={() => setActiveTab('track')} className={`px-4 py-2 flex items-center space-x-2 ${activeTab === 'track' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500'}`}><Package size={18}/><span>Track</span></button>
+                    <button onClick={() => setActiveTab('login')} className={`px-4 py-2 flex items-center space-x-2 ${activeTab === 'login' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500'}`}><LogIn size={18}/><span>Login</span></button>
+                    <button onClick={() => setActiveTab('register')} className={`px-4 py-2 flex items-center space-x-2 ${activeTab === 'register' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500'}`}><UserPlus size={18}/><span>Register</span></button>
                 </div>
-            )}
 
-            {view === 'details' && order && (
-                <OrderDetails order={order} onBack={backToLookup} />
-            )}
+                {activeTab === 'track' && (
+                    <div>
+                        <OrderLookupForm onLookup={handleOrderLookup} onSchedule={() => setView('schedule')} />
+                        <ServicesAndPricing />
+                        {error && <p className="mt-4 text-center text-red-500">{error}</p>}
+                    </div>
+                )}
+                {activeTab === 'login' && <AuthForm />}
+                {activeTab === 'register' && <AuthForm isRegister />}
+            </div>
 
-            {view === 'schedule' && (
-                <SchedulePickupForm
-                    onSubmit={handleScheduleSubmit}
-                    onCancel={backToLookup}
-                />
-            )}
+            {view === 'details' && order && <OrderDetails order={order} onBack={backToLookup} />}
+            {view === 'schedule' && <SchedulePickupForm onSubmit={handleScheduleSubmit} onCancel={backToLookup} />}
         </div>
     );
 };
