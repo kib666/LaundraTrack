@@ -15,6 +15,7 @@ import {
     X,
     Loader
 } from 'lucide-react';
+import StatusProgressTracker from '@/components/customer/StatusProgressTracker';
 
 // Utility Components
 const LiveCountdown = ({ targetDate }) => {
@@ -43,13 +44,13 @@ const LiveCountdown = ({ targetDate }) => {
 
 const StatusBadge = ({ status }) => {
     const statusConfig = {
-        pending: { color: 'bg-yellow-100 text-yellow-800', text: 'Pending' },
-        in_wash: { color: 'bg-blue-100 text-blue-800', text: 'In Wash' },
-        ready: { color: 'bg-green-100 text-green-800', text: 'Ready' },
-        delivered: { color: 'bg-gray-100 text-gray-800', text: 'Delivered' }
+        PENDING: { color: 'bg-yellow-100 text-yellow-800', text: 'Pending' },
+        IN_PROGRESS: { color: 'bg-blue-100 text-blue-800', text: 'In Wash' },
+        COMPLETED: { color: 'bg-green-100 text-green-800', text: 'Ready' },
+        DELIVERED: { color: 'bg-gray-100 text-gray-800', text: 'Delivered' },
     };
 
-    const config = statusConfig[status] || statusConfig.pending;
+    const config = statusConfig[status] || statusConfig.PENDING;
 
     return (
         <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
@@ -58,9 +59,9 @@ const StatusBadge = ({ status }) => {
     );
 };
 
-const OrderLookupForm = ({ onLookup }) => {
+const OrderLookupForm = ({ onLookup, onSchedule }) => {
     const [searchTerm, setSearchTerm] = useState('');
-    const [searchType, setSearchType] = useState('order');
+    const [searchType, setSearchType] = useState('phone');
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -72,27 +73,31 @@ const OrderLookupForm = ({ onLookup }) => {
     return (
         <div className="bg-white rounded-lg shadow-sm border p-6 max-w-md mx-auto">
             <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold">Track Your Order</h2>
+                <h2 className="text-xl font-bold text-gray-800">Track Your Order</h2>
                 <Package className="text-blue-500" size={24} />
             </div>
-            <p className="text-gray-600 mb-4">Enter your order ID or phone number to track your laundry</p>
+            <p className="text-gray-600 mb-4">
+                Enter your order ID or phone number to track your laundry.
+            </p>
             
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Search by:</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Search by:
+                    </label>
                     <div className="flex space-x-4">
-                        <label className="flex items-center">
+                        <label className="flex items-center text-gray-800">
                             <input
                                 type="radio"
                                 name="searchType"
-                                value="order"
-                                checked={searchType === 'order'}
+                                value="email"
+                                checked={searchType === 'email'}
                                 onChange={(e) => setSearchType(e.target.value)}
                                 className="mr-2"
                             />
-                            Order ID
+                            Email
                         </label>
-                        <label className="flex items-center">
+                        <label className="flex items-center text-gray-800">
                             <input
                                 type="radio"
                                 name="searchType"
@@ -111,8 +116,12 @@ const OrderLookupForm = ({ onLookup }) => {
                         type="text"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder={searchType === 'order' ? 'Enter order ID (e.g., LD001)' : 'Enter phone number'}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder={
+                            searchType === 'email'
+                                ? 'Enter your email address'
+                                : 'Enter your phone number'
+                        }
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                     />
                 </div>
                 
@@ -123,6 +132,16 @@ const OrderLookupForm = ({ onLookup }) => {
                     Track Order
                 </button>
             </form>
+            <div className="mt-4 text-center">
+                <p className="text-gray-600">or</p>
+                <button
+                    onClick={onSchedule}
+                    className="w-full mt-2 bg-green-500 text-white py-3 rounded-lg font-medium hover:bg-green-600 transition-colors flex items-center justify-center space-x-2"
+                >
+                    <CalendarCheck size={20} />
+                    <span>Schedule a Pickup</span>
+                </button>
+            </div>
         </div>
     );
 };
@@ -139,9 +158,9 @@ const OrderDetails = ({ order, onBack }) => {
     };
 
     return (
-        <div className="bg-white rounded-lg shadow-sm border p-6 max-w-2xl mx-auto">
+        <div className="bg-white rounded-lg shadow-sm border p-6 max-w-4xl mx-auto">
             <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold">Order Details</h2>
+                <h2 className="text-2xl font-bold text-gray-800">Order Details</h2>
                 <button
                     onClick={onBack}
                     className="text-gray-500 hover:text-gray-700"
@@ -150,72 +169,53 @@ const OrderDetails = ({ order, onBack }) => {
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                    <div>
-                        <h3 className="text-lg font-semibold mb-2">Order Information</h3>
-                        <div className="space-y-2">
-                            <div className="flex justify-between">
-                                <span className="text-gray-600">Order ID:</span>
-                                <span className="font-medium">{order.id}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-gray-600">Customer:</span>
-                                <span className="font-medium">{order.customer}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-gray-600">Phone:</span>
-                                <span className="font-medium">{order.phone}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-gray-600">Weight:</span>
-                                <span className="font-medium">{order.weight}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-gray-600">Total:</span>
-                                <span className="font-medium">${order.total}</span>
-                            </div>
-                        </div>
+            <div className="mb-8">
+                <StatusProgressTracker status={order.status} eta={order.eta}>
+                    <p className="text-sm text-gray-600 mb-2">Estimated delivery time:</p>
+                    <div className="text-lg font-semibold text-blue-600">
+                        <span>{new Date(order.eta).toLocaleDateString()}</span>
+                        {new Date(order.eta) > new Date() && (
+                            <span className="block text-xs font-normal">
+                                <LiveCountdown targetDate={order.eta} />
+                            </span>
+                        )}
                     </div>
-                </div>
+                </StatusProgressTracker>
+            </div>
 
-                <div className="space-y-4">
-                    <div>
-                        <h3 className="text-lg font-semibold mb-2">Status & Timeline</h3>
-                        <div className="space-y-3">
-                            <div className="flex items-center space-x-3">
-                                {getStatusIcon(order.status)}
-                                <div className="flex-1">
-                                    <div className="flex items-center justify-between">
-                                        <span className="font-medium">Current Status</span>
-                                        <StatusBadge status={order.status} />
-                                    </div>
-                                    <p className="text-sm text-gray-600">
-                                        {order.status === 'pending' && 'Your order has been received and is being processed'}
-                                        {order.status === 'in_wash' && 'Your laundry is currently being washed'}
-                                        {order.status === 'ready' && 'Your order is ready for pickup or delivery'}
-                                        {order.status === 'delivered' && 'Your order has been delivered'}
-                                    </p>
-                                </div>
-                            </div>
-                            
-                            <div className="border-t pt-3">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-gray-600">Estimated Delivery:</span>
-                                    <span className="font-medium">
-                                        {new Date(order.eta).toLocaleDateString()}
-                                    </span>
-                                </div>
-                                <div className="mt-2">
-                                    <LiveCountdown targetDate={order.eta} />
-                                </div>
-                            </div>
-                        </div>
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                <h3 className="text-xl font-semibold mb-4 text-gray-800">
+                    Order Information
+                </h3>
+                <div className="space-y-4 text-gray-800">
+                    <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Order ID:</span>
+                        <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+                            {order.id}
+                        </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Customer:</span>
+                        <span className="font-medium">{order.customerName}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Phone:</span>
+                        <span className="font-medium">{order.customerPhone}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Weight:</span>
+                        <span className="font-medium">{order.weight} lbs</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Total:</span>
+                        <span className="font-bold text-lg text-green-600">
+                            ₱{order.total ? order.total.toFixed(2) : '0.00'}
+                        </span>
                     </div>
                 </div>
             </div>
 
-            <div className="mt-6 pt-6 border-t">
+            <div className="mt-8 pt-6 border-t">
                 <div className="flex items-center space-x-2 text-gray-600">
                     <Phone size={16} />
                     <span>Need help? Call us at (555) 123-4567</span>
@@ -225,13 +225,12 @@ const OrderDetails = ({ order, onBack }) => {
     );
 };
 
-const AppointmentForm = ({ onSubmit, onCancel }) => {
+const SchedulePickupForm = ({ onSubmit, onCancel }) => {
     const [formData, setFormData] = useState({
         name: '',
         phone: '',
-        date: '',
-        service: 'Wash & Fold',
-        notes: ''
+        email: '',
+        notes: '',
     });
 
     const handleSubmit = (e) => {
@@ -240,227 +239,214 @@ const AppointmentForm = ({ onSubmit, onCancel }) => {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-            </div>
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                <input
-                    type="tel"
-                    required
-                    value={formData.phone}
-                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                    className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-            </div>
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Date & Time</label>
-                <input
-                    type="datetime-local"
-                    required
-                    value={formData.date}
-                    onChange={(e) => setFormData({...formData, date: e.target.value})}
-                    className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-            </div>
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Service Type</label>
-                <select
-                    value={formData.service}
-                    onChange={(e) => setFormData({...formData, service: e.target.value})}
-                    className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    <option>Wash & Fold</option>
-                    <option>Dry Clean</option>
-                    <option>Wash & Iron</option>
-                    <option>Express Service</option>
-                </select>
-            </div>
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Special Notes</label>
-                <textarea
-                    rows="3"
-                    value={formData.notes}
-                    onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                    className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Any special instructions or requests..."
-                />
-            </div>
-            <div className="flex space-x-3 pt-4">
-                <button
-                    type="button"
-                    onClick={onCancel}
-                    className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
-                >
-                    Cancel
-                </button>
-                <button
-                    type="submit"
-                    className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                >
-                    Book Appointment
+        <div className="bg-white rounded-lg shadow-sm border p-6 max-w-md mx-auto">
+            <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-800">Schedule a Pickup</h2>
+                <button onClick={onCancel} className="text-gray-500 hover:text-gray-700">
+                    <X size={24} />
                 </button>
             </div>
-        </form>
+            <p className="text-gray-600 mb-4">
+                Fill in your details, and we'll create an order for you.
+            </p>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Name
+                    </label>
+                    <input
+                        type="text"
+                        required
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Email Address
+                    </label>
+                    <input
+                        type="email"
+                        required
+                        value={formData.email}
+                        onChange={(e) =>
+                            setFormData({ ...formData, email: e.target.value })
+                        }
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Phone Number
+                    </label>
+                    <input
+                        type="tel"
+                        required
+                        value={formData.phone}
+                        onChange={(e) =>
+                            setFormData({ ...formData, phone: e.target.value })
+                        }
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Notes (optional)
+                    </label>
+                    <textarea
+                        value={formData.notes}
+                        onChange={(e) =>
+                            setFormData({ ...formData, notes: e.target.value })
+                        }
+                        rows="3"
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                        placeholder="e.g., special instructions for pickup"
+                    ></textarea>
+                </div>
+                <div className="flex justify-end space-x-3 pt-2">
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        className="bg-blue-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-600 transition-colors"
+                    >
+                        Submit Request
+                    </button>
+                </div>
+            </form>
+        </div>
     );
 };
 
-// Main Customer Portal Component
 const CustomerPortal = () => {
-    const [selectedOrder, setSelectedOrder] = useState(null);
-    const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
-    const [appointmentSuccess, setAppointmentSuccess] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [view, setView] = useState('lookup'); // 'lookup', 'details', 'schedule'
+    const [order, setOrder] = useState(null);
     const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [lastOrder, setLastOrder] = useState(null);
+
+    useEffect(() => {
+        if (view === 'details' && order && order.status !== 'DELIVERED') {
+            const pollOrderStatus = async (orderId) => {
+                try {
+                    const response = await fetch(`/api/orders/lookup?type=order&q=${orderId}`);
+                    if (response.ok) {
+                        const updatedOrder = await response.json();
+                        setOrder(updatedOrder);
+                    }
+                } catch (err) {
+                    console.error('Polling error:', err);
+                }
+            };
+
+            const intervalId = setInterval(() => {
+                pollOrderStatus(order.id);
+            }, 10000); // Poll every 10 seconds
+
+            return () => clearInterval(intervalId);
+        }
+    }, [view, order]);
 
     const handleOrderLookup = async (searchTerm, type) => {
+        setIsLoading(true);
+        setError('');
+        setOrder(null);
         try {
-            setLoading(true);
-            setError('');
-            
-            // Fetch all orders and filter client-side for now
-            // In a real app, you'd have a specific API endpoint for order lookup
-            const response = await fetch('/api/orders');
-            const orders = await response.json();
-            
-            const order = orders.find(o =>
-                type === 'order'
-                    ? o.id.toLowerCase() === searchTerm.toLowerCase()
-                    : o.phone.includes(searchTerm)
+            const response = await fetch(
+                `/api/orders/lookup?type=${type}&q=${searchTerm}`
             );
-            
-            if (order) {
-                setSelectedOrder(order);
-            } else {
-                setError('Order not found. Please check your order ID or phone number.');
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || 'Order not found');
             }
-        } catch (error) {
-            console.error('Error looking up order:', error);
-            setError('Failed to look up order. Please try again.');
+            const data = await response.json();
+            setOrder(data);
+            setView('details');
+        } catch (err) {
+            setError(err.message);
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
-    const handleBookAppointment = async (formData) => {
+    const handleScheduleSubmit = async (formData) => {
+        setIsLoading(true);
+        setError('');
         try {
-            const response = await fetch('/api/appointments', {
+            const response = await fetch('/api/orders', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    customer: formData.name,
-                    phone: formData.phone,
-                    date: formData.date,
-                    service: formData.service,
+                    customerName: formData.name,
+                    customerPhone: formData.phone,
+                    customerEmail: formData.email,
                     notes: formData.notes,
-                    status: 'pending'
+                    // customerType is 'new' by default when scheduling from this form
+                    customerType: 'new',
                 }),
             });
 
-            if (response.ok) {
-                setIsAppointmentModalOpen(false);
-                setAppointmentSuccess(true);
-            } else {
-                setError('Failed to book appointment. Please try again.');
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || 'Failed to schedule pickup');
             }
-        } catch (error) {
-            console.error('Error booking appointment:', error);
-            setError('Failed to book appointment. Please try again.');
+
+            const newOrder = await response.json();
+            setLastOrder(newOrder);
+            setView('lookup'); // Go back to lookup view after scheduling
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setIsLoading(false);
         }
     };
 
+    const backToLookup = () => {
+        setOrder(null);
+        setError('');
+        setView('lookup');
+    };
+
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
-            <div className="max-w-4xl mx-auto px-4">
-                <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-gray-800 mb-2">Laundry Services</h1>
-                    <p className="text-gray-600">Track your order or book an appointment</p>
+        <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4">
+            {isLoading && (
+                <div className="absolute inset-0 bg-white bg-opacity-75 flex justify-center items-center z-50">
+                    <Loader className="animate-spin text-blue-500" size={48} />
                 </div>
+            )}
 
-                {error && (
-                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 max-w-md mx-auto">
-                        {error}
-                    </div>
-                )}
-
-                {!selectedOrder ? (
-                    <div className="space-y-6">
-                        <OrderLookupForm onLookup={handleOrderLookup} />
-
-                        {loading && (
-                            <div className="text-center py-8">
-                                <Loader className="mx-auto animate-spin text-blue-500 mb-4" size={32} />
-                                <p className="text-gray-600">Looking up your order...</p>
-                            </div>
-                        )}
-
-                        <div className="bg-white rounded-lg shadow-sm border p-6 max-w-md mx-auto">
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-xl font-bold">Book Appointment</h2>
-                                <CalendarDays className="text-blue-500" size={24} />
-                            </div>
-                            <p className="text-gray-600 mb-4">Schedule a pickup time that works for you</p>
-                            <button
-                                onClick={() => setIsAppointmentModalOpen(true)}
-                                className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
-                            >
-                                <CalendarCheck size={18} />
-                                Book Now
-                            </button>
+            {view === 'lookup' && (
+                <div className="w-full max-w-md">
+                    <OrderLookupForm
+                        onLookup={handleOrderLookup}
+                        onSchedule={() => setView('schedule')}
+                    />
+                    {error && <p className="mt-4 text-center text-red-500">{error}</p>}
+                    {lastOrder && (
+                        <div className="mt-4 p-4 bg-green-100 text-green-800 rounded-lg text-center">
+                            Pickup scheduled successfully! Your new Order ID is{' '}
+                            <span className="font-bold">{lastOrder.id}</span>.
                         </div>
-                    </div>
-                ) : (
-                    <OrderDetails order={selectedOrder} onBack={() => setSelectedOrder(null)} />
-                )}
+                    )}
+                </div>
+            )}
 
-                {/* Appointment Modal */}
-                {isAppointmentModalOpen && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                        <div className="bg-white rounded-lg max-w-md w-full p-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-xl font-bold">Book Appointment</h2>
-                                <button
-                                    onClick={() => setIsAppointmentModalOpen(false)}
-                                    className="text-gray-500 hover:text-gray-700"
-                                >
-                                    <X size={24} />
-                                </button>
-                            </div>
-                            <AppointmentForm
-                                onSubmit={handleBookAppointment}
-                                onCancel={() => setIsAppointmentModalOpen(false)}
-                            />
-                        </div>
-                    </div>
-                )}
+            {view === 'details' && order && (
+                <OrderDetails order={order} onBack={backToLookup} />
+            )}
 
-                {/* Success Modal */}
-                {appointmentSuccess && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                        <div className="bg-white rounded-lg max-w-md w-full p-6 text-center">
-                            <CheckCircle className="mx-auto text-green-500 mb-4" size={48} />
-                            <h3 className="text-xl font-semibold mb-2">Thank You!</h3>
-                            <p className="text-gray-600 mb-6">Your appointment has been successfully booked. We'll contact you to confirm the details.</p>
-                            <button
-                                onClick={() => setAppointmentSuccess(false)}
-                                className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600"
-                            >
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </div>
+            {view === 'schedule' && (
+                <SchedulePickupForm
+                    onSubmit={handleScheduleSubmit}
+                    onCancel={backToLookup}
+                />
+            )}
         </div>
     );
 };

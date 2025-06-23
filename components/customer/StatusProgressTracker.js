@@ -1,36 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Package, Clock, CheckCircle, Truck } from 'lucide-react';
 
-const LiveCountdown = ({ targetDate }) => {
-    const [timeLeft, setTimeLeft] = useState('');
-
-    useEffect(() => {
-        const timer = setInterval(() => {
-            const now = new Date().getTime();
-            const target = new Date(targetDate).getTime();
-            const difference = target - now;
-
-            if (difference > 0) {
-                const hours = Math.floor(difference / (1000 * 60 * 60));
-                const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-                setTimeLeft(`${hours}h ${minutes}m`);
-            } else {
-                setTimeLeft('Ready!');
-            }
-        }, 1000);
-
-        return () => clearInterval(timer);
-    }, [targetDate]);
-
-    return <span className="text-sm text-gray-600">{timeLeft}</span>;
-};
-
-const StatusProgressTracker = ({ status, eta }) => {
+const StatusProgressTracker = ({ status, eta, children }) => {
     const steps = [
-        { key: 'pending', label: 'Order Received', icon: Package },
-        { key: 'in_wash', label: 'In Wash', icon: Clock },
-        { key: 'ready', label: 'Ready', icon: CheckCircle },
-        { key: 'delivered', label: 'Delivered', icon: Truck }
+        { key: 'PENDING', label: 'Order Received', icon: Package },
+        { key: 'IN_PROGRESS', label: 'In Wash', icon: Clock },
+        { key: 'COMPLETED', label: 'Ready', icon: CheckCircle },
+        { key: 'DELIVERED', label: 'Delivered', icon: Truck }
     ];
 
     const getCurrentStep = () => {
@@ -42,7 +18,7 @@ const StatusProgressTracker = ({ status, eta }) => {
 
     return (
         <div className="bg-white rounded-lg shadow-sm border p-6">
-            <h3 className="text-lg font-semibold mb-6 text-center">Order Status</h3>
+            <h3 className="text-lg font-semibold mb-6 text-center text-gray-800">Order Status</h3>
 
             <div className="relative">
                 <div className="flex justify-between items-center mb-8">
@@ -73,12 +49,9 @@ const StatusProgressTracker = ({ status, eta }) => {
                 </div>
             </div>
 
-            {status !== 'delivered' && (
+            {status !== 'DELIVERED' && eta && (
                 <div className="text-center mt-6 p-4 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-gray-600 mb-2">Estimated delivery time:</p>
-                    <p className="text-lg font-semibold text-blue-600">
-                        <LiveCountdown targetDate={eta} />
-                    </p>
+                    {children}
                 </div>
             )}
         </div>

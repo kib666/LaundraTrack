@@ -22,41 +22,72 @@ export async function GET() {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { customerType, userId, customerName, phone, service, weight, deliveryAddress, finishDate } = body;
+    const {
+      customerType,
+      customerId, // Use customerId for clarity
+      customerName,
+      customerPhone,
+      customerEmail, // Added email
+      notes,
+      // Default values for fields not provided by customer form
+      weight = 0,
+      total = 0,
+      status = 'PENDING',
+      eta = null,
+    } = body;
 
-    // Basic price calculation (example: ₱150 per kg)
-    const pricePerKg = 150;
-    const total = parseFloat(weight) * pricePerKg;
-    
-    let orderData = {
-      service,
-      weight: parseFloat(weight),
-      status: 'Received',
-      deliveryAddress,
-      eta: new Date(finishDate),
-      total,
-    };
+    let finalCustomerId;
 
-    if (customerType === 'existing' && userId) {
-      const user = await prisma.user.findUnique({ where: { id: userId } });
-      if (!user) {
-        return NextResponse.json({ error: 'User not found' }, { status: 404 });
-      }
-      orderData.userId = userId;
-      orderData.customer = user.name;
-      orderData.phone = user.phoneNumber || '';
+    if (customerType === 'existing' && customerId) {
+      // Logic for existing customer (used by admin form)
+      finalCustomerId = customerId;
     } else {
-      orderData.customer = customerName;
-      orderData.phone = phone;
+      // Logic for new customer (used by customer schedule pickup form)
+      // We can also check if a user with this email or phone already exists
+      let user = await prisma.user.findFirst({
+        where: { OR: [{ email: customerEmail }, { phone: customerPhone }] },
+      });
+
+      if (user) {
+        // User exists, link the order to them
+        finalCustomerId = user.id;
+      } else {
+        // User does not exist, create a new one
+        const newUser = await prisma.user.create({
+          data: {
+            name: customerName,
+            email: customerEmail,
+            phone: customerPhone,
+            role: 'CUSTOMER',
+          },
+        });
+        finalCustomerId = newUser.id;
+      }
     }
 
     const order = await prisma.order.create({
-      data: orderData
+      data: {
+        weight: parseFloat(weight),
+        total: parseFloat(total),
+        status,
+        eta: eta ? new Date(eta) : null,
+        notes,
+        customerId: finalCustomerId,
+      },
+      include: {
+        customer: true, // Return the full customer details
+      },
     });
     
     return NextResponse.json(order, { status: 201 });
   } catch (error) {
     console.error('[POST /api/orders] Error:', error);
+    if (error.code === 'P2002') {
+      return NextResponse.json(
+        { error: 'A user with this email or phone number already exists.' },
+        { status: 409 }
+      );
+    }
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }
