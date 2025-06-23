@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Users, Plus, Edit, Trash2, Loader } from 'lucide-react';
 import Modal from '@/components/common/Modal';
 import UserForm from '@/components/admin/UserForm';
@@ -9,7 +10,7 @@ export default function UsersManagementPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const router = useRouter();
 
   const fetchUsers = async () => {
     try {
@@ -38,12 +39,10 @@ export default function UsersManagementPage() {
   }, []);
 
   const handleFormSubmit = async (userData) => {
-    const method = selectedUser ? 'PATCH' : 'POST';
-    const url = selectedUser ? `/api/users/${selectedUser.id}` : '/api/users';
-
+    // This form is now only for creating users
     try {
-      const response = await fetch(url, {
-        method,
+      const response = await fetch('/api/users', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData),
       });
@@ -60,12 +59,10 @@ export default function UsersManagementPage() {
   };
 
   const handleEdit = (user) => {
-    setSelectedUser(user);
-    setIsModalOpen(true);
+    router.push(`/admin/users/${user.id}`);
   };
 
   const handleAddNew = () => {
-    setSelectedUser(null);
     setIsModalOpen(true);
   };
 
@@ -141,8 +138,8 @@ export default function UsersManagementPage() {
         </div>
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={selectedUser ? 'Edit User' : 'Add New User'}>
-        <UserForm user={selectedUser} onSubmit={handleFormSubmit} onCancel={() => setIsModalOpen(false)} />
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add New User">
+        <UserForm user={null} onSubmit={handleFormSubmit} onCancel={() => setIsModalOpen(false)} />
       </Modal>
     </>
   );

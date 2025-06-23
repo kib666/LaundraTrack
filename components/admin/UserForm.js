@@ -11,11 +11,12 @@ export default function UserForm({ user, onSubmit, onCancel }) {
   });
 
   useEffect(() => {
+    console.log('UserForm: user prop changed', user);
     if (user) {
       setFormData({
-        name: user.name,
-        email: user.email,
-        role: user.role,
+        name: user.name || '',
+        email: user.email || '',
+        role: user.role || 'STAFF',
         password: '',
       });
     } else {
@@ -30,6 +31,7 @@ export default function UserForm({ user, onSubmit, onCancel }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log('UserForm: submitting form data', formData);
     onSubmit(formData);
   };
 
@@ -42,7 +44,7 @@ export default function UserForm({ user, onSubmit, onCancel }) {
           name="name"
           value={formData.name}
           onChange={handleChange}
-          className="w-full p-2 border rounded-lg"
+          className="w-full p-2 border rounded-lg text-gray-900"
           required
         />
       </div>
@@ -53,7 +55,7 @@ export default function UserForm({ user, onSubmit, onCancel }) {
           name="email"
           value={formData.email}
           onChange={handleChange}
-          className="w-full p-2 border rounded-lg"
+          className="w-full p-2 border rounded-lg text-gray-900"
           required
         />
       </div>
@@ -63,7 +65,7 @@ export default function UserForm({ user, onSubmit, onCancel }) {
           name="role"
           value={formData.role}
           onChange={handleChange}
-          className="w-full p-2 border rounded-lg"
+          className="w-full p-2 border rounded-lg text-gray-900"
         >
           <option value="ADMIN">Admin</option>
           <option value="STAFF">Staff</option>
@@ -79,7 +81,7 @@ export default function UserForm({ user, onSubmit, onCancel }) {
           name="password"
           value={formData.password}
           onChange={handleChange}
-          className="w-full p-2 border rounded-lg"
+          className="w-full p-2 border rounded-lg text-gray-900"
           required={!user}
         />
       </div>

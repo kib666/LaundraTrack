@@ -1,14 +1,27 @@
+'use client';
+
 import React from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Home, Package, CalendarDays, BarChart3, Users } from 'lucide-react';
 
-const Sidebar = ({ activeTab, onTabChange }) => {
+const Sidebar = () => {
+    const pathname = usePathname();
+    
     const menuItems = [
-        { key: 'dashboard', label: 'Dashboard', icon: Home },
-        { key: 'orders', label: 'Orders', icon: Package },
-        { key: 'appointments', label: 'Appointments', icon: CalendarDays },
-        { key: 'reports', label: 'Reports', icon: BarChart3 },
-        { key: 'users', label: 'Users Management', icon: Users }
+        { key: 'dashboard', label: 'Dashboard', icon: Home, href: '/admin' },
+        { key: 'orders', label: 'Orders', icon: Package, href: '/admin/orders' },
+        { key: 'appointments', label: 'Appointments', icon: CalendarDays, href: '/admin/appointments' },
+        { key: 'reports', label: 'Reports', icon: BarChart3, href: '/admin/reports' },
+        { key: 'users', label: 'Users Management', icon: Users, href: '/admin/users' }
     ];
+
+    const isActive = (href) => {
+        if (href === '/admin') {
+            return pathname === '/admin';
+        }
+        return pathname.startsWith(href);
+    };
 
     return (
         <div className="bg-white shadow-sm border-r h-full">
@@ -19,17 +32,18 @@ const Sidebar = ({ activeTab, onTabChange }) => {
 
             <nav className="p-2">
                 {menuItems.map((item) => (
-                    <button
+                    <Link
                         key={item.key}
-                        onClick={() => onTabChange(item.key)}
-                        className={`w-full flex items-center space-x-3 px-3 py-2 text-left rounded-lg transition-colors ${activeTab === item.key
+                        href={item.href}
+                        className={`w-full flex items-center space-x-3 px-3 py-2 text-left rounded-lg transition-colors ${
+                            isActive(item.href)
                                 ? 'bg-blue-50 text-blue-600'
                                 : 'text-gray-700 hover:bg-gray-100'
-                            }`}
+                        }`}
                     >
                         <item.icon size={20} />
                         <span>{item.label}</span>
-                    </button>
+                    </Link>
                 ))}
             </nav>
         </div>

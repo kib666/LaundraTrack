@@ -5,9 +5,15 @@ import bcrypt from 'bcryptjs';
 export const dynamic = 'force-dynamic';
 
 // GET all users
-export async function GET() {
+export async function GET(request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const role = searchParams.get('role');
+
+    const whereClause = role ? { role } : {};
+
     const users = await prisma.user.findMany({
+      where: whereClause,
       select: {
         id: true,
         name: true,
