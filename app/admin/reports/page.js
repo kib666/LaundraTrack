@@ -120,7 +120,6 @@ export default function ReportsPage() {
 
     return (
         <div className="space-y-8">
-             <h1 className="text-3xl font-bold text-gray-800">Analytics Dashboard</h1>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard title="Total Revenue" value={`₱${totalRevenue.toFixed(2)}`} icon={<DollarSign size={24} />} />
                 <StatCard title="Total Orders" value={totalOrders} icon={<ShoppingBag size={24} />} />

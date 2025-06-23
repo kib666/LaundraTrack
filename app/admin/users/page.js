@@ -103,20 +103,16 @@ export default function UsersManagementPage() {
 
   return (
     <>
+      <div className="flex justify-end mb-4">
+        <button
+          onClick={handleAddNew}
+          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 flex items-center space-x-2"
+        >
+          <Plus size={16} />
+          <span>Add User</span>
+        </button>
+      </div>
       <div className="bg-white rounded-lg shadow-sm border p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold flex items-center">
-            <Users className="mr-2" /> Users Management
-          </h2>
-          <button
-            onClick={handleAddNew}
-            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 flex items-center space-x-2"
-          >
-            <Plus size={16} />
-            <span>Add User</span>
-          </button>
-        </div>
-
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">

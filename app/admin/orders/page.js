@@ -110,11 +110,7 @@ export default function OrdersPage() {
 
   return (
     <>
-      <div className="bg-white rounded-lg shadow-sm border p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold flex items-center">
-            <Package className="mr-2" /> Order Management
-          </h2>
+      <div className="flex justify-end mb-4">
           <button
             onClick={() => setIsModalOpen(true)}
             className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 flex items-center space-x-2"
@@ -122,7 +118,8 @@ export default function OrdersPage() {
             <Plus size={16} />
             <span>Add Order</span>
           </button>
-        </div>
+      </div>
+      <div className="bg-white rounded-lg shadow-sm border">
         <OrdersTable orders={orders} onStatusUpdate={handleStatusUpdate} onDateUpdate={handleDateUpdate}/>
       </div>
 

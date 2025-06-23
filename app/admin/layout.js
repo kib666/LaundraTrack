@@ -1,57 +1,68 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Menu } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { Menu, Bell, User } from 'lucide-react';
 import Sidebar from '@/components/admin/Sidebar';
-import TopBar from '@/components/common/TopBar';
+
+const AdminTopBar = ({ title, onMenuToggle }) => {
+    return (
+        <div className="bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center">
+            <div className="flex items-center">
+                 <button onClick={onMenuToggle} className="md:hidden mr-4">
+                    <Menu size={24} />
+                </button>
+                <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
+            </div>
+            <div className="flex items-center space-x-4">
+                <Bell className="text-gray-600 hover:text-gray-800 cursor-pointer" size={20} />
+                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                    <User className="text-white" size={16} />
+                </div>
+            </div>
+        </div>
+    );
+};
+
 
 export default function AdminLayout({ children }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   const getPageTitle = () => {
-    // Extract the current path to determine the active tab
-    if (typeof window !== 'undefined') {
-      const path = window.location.pathname;
-      if (path.includes('/users')) return 'Users Management';
-      if (path.includes('/orders')) return 'Order Management';
-      if (path.includes('/appointments')) return 'Appointments';
-      if (path.includes('/reports')) return 'Reports';
-    }
+    if (pathname.startsWith('/admin/users')) return 'Users Management';
+    if (pathname.startsWith('/admin/orders')) return 'Order Management';
+    if (pathname.startsWith('/admin/calendar')) return 'Calendar';
+    if (pathname.startsWith('/admin/reports')) return 'Analytics Dashboard';
     return 'Admin Dashboard';
   };
 
+  const pageTitle = getPageTitle();
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="flex h-screen bg-gray-50">
-        <div className="hidden md:block w-64">
-          <Sidebar />
-        </div>
-
-        {isMobileMenuOpen && (
-          <div className="fixed inset-0 z-50 md:hidden">
-            <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setIsMobileMenuOpen(false)} />
-            <div className="absolute left-0 top-0 w-64 h-full">
-              <Sidebar />
+    <div className="min-h-screen bg-gray-100">
+        <div className="flex h-screen bg-gray-100">
+            <div className="hidden md:block w-64 flex-shrink-0">
+                <Sidebar />
             </div>
-          </div>
-        )}
 
-        <div className="flex-1 flex flex-col">
-          <div className="md:hidden bg-white shadow-sm border-b px-4 py-3 flex items-center justify-between">
-            <button onClick={() => setIsMobileMenuOpen(true)}>
-              <Menu size={24} />
-            </button>
-            <h1 className="text-lg font-semibold">Laundry Admin</h1>
-            <div className="w-6" />
-          </div>
+            {isMobileMenuOpen && (
+                <div className="fixed inset-0 z-50 md:hidden">
+                    <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setIsMobileMenuOpen(false)} />
+                    <div className="absolute left-0 top-0 w-64 h-full bg-white">
+                        <Sidebar />
+                    </div>
+                </div>
+            )}
 
-          <TopBar title={getPageTitle()} />
+            <div className="flex-1 flex flex-col overflow-y-auto">
+                <AdminTopBar title={pageTitle} onMenuToggle={() => setIsMobileMenuOpen(true)} />
 
-          <div className="flex-1 p-6 overflow-y-auto relative">
-            {children}
-          </div>
+                <main className="flex-1 p-6">
+                    {children}
+                </main>
+            </div>
         </div>
-      </div>
     </div>
   );
 } 
