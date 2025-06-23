@@ -87,12 +87,12 @@ export default function HomePage() {
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-            Professional Laundry
+            M1G Laundry
             <span className="text-blue-600 block">Management System</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Streamline your laundry business operations with our comprehensive tracking and management solution.
-            Perfect for businesses and convenient for customers.
+              Project for the Course of Parallel And Distributed Computing
+            
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -246,15 +246,15 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row gap-8 justify-center items-center mb-8">
             <div className="flex items-center space-x-3">
               <Phone size={24} />
-              <span className="text-lg">(555) 123-4567</span>
+              <span className="text-lg">+639696438031</span>
             </div>
             <div className="flex items-center space-x-3">
               <Mail size={24} />
-              <span className="text-lg">info@laundrytracker.com</span>
+              <span className="text-lg">mamdavid@tip.edu.ph</span>
             </div>
             <div className="flex items-center space-x-3">
               <MapPin size={24} />
-              <span className="text-lg">123 Business St, City</span>
+              <span className="text-lg">1338 Arlegui St, Quiapo, City Of Manila, 1001 Metro Manila</span>
             </div>
           </div>
 
@@ -273,10 +273,10 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto text-center">
           <div className="flex items-center justify-center space-x-2 mb-4">
             <Package size={24} />
-            <span className="text-xl font-bold">Laundry Tracker</span>
+            <span className="text-xl font-bold">M1G Laundry Tracker</span>
           </div>
           <p className="text-gray-400">
-            © 2024 Laundry Tracker. All rights reserved.
+            © 2025 M1G Laundry Tracker. All rights reserved.
           </p>
         </div>
       </footer>
