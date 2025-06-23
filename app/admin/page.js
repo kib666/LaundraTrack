@@ -2,14 +2,45 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Package, Plus, CheckCircle, Loader
+  Package, Plus, CheckCircle, Loader, Clock, Truck, TrendingUp
 } from 'lucide-react';
 
 // Import components
-import DashboardStats from '@/components/admin/DashboardStats';
 import OrdersTable from '@/components/admin/OrdersTable';
 import Modal from '@/components/common/Modal';
 import OrderForm from '@/components/admin/OrderForm';
+
+const DashboardStats = ({ orders }) => {
+    const stats = [
+        { title: 'Pending Tasks', value: orders.filter(o => o.status === 'PENDING').length, icon: Clock, color: 'bg-yellow-500' },
+        { title: 'In Progress', value: orders.filter(o => o.status === 'IN_PROGRESS').length, icon: Package, color: 'bg-blue-500' },
+        { title: 'Ready for Delivery', value: orders.filter(o => o.status === 'COMPLETED').length, icon: Truck, color: 'bg-green-500' },
+        { title: "Today's Revenue", value: `₱${orders.reduce((sum, order) => {
+            const orderDate = new Date(order.createdAt);
+            const today = new Date();
+            if (orderDate.getDate() === today.getDate() && orderDate.getMonth() === today.getMonth() && orderDate.getFullYear() === today.getFullYear()) {
+                return sum + order.total;
+            }
+            return sum;
+        }, 0).toFixed(2)}`, icon: TrendingUp, color: 'bg-purple-500' }
+    ];
+
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {stats.map((stat, index) => (
+                <div key={index} className="bg-white rounded-lg shadow-sm p-6 border flex items-center justify-between">
+                    <div>
+                        <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
+                        <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+                    </div>
+                    <div className={`${stat.color} p-3 rounded-lg`}>
+                        <stat.icon className="text-white" size={24} />
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+};
 
 export default function AdminDashboard() {
   const [orders, setOrders] = useState([]);

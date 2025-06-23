@@ -62,9 +62,17 @@ export default function OrderCalendarView({ orders }) {
               <span className="font-semibold text-sm">{day}</span>
               <div className="mt-1 space-y-1">
                 {dayOrders.map(order => (
-                  <div key={`${order.id}-${order.type}`} className={`flex items-center text-xs p-1 rounded-md ${order.type === 'arrival' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
-                    {order.type === 'arrival' ? <Package size={12} className="mr-1" /> : <Flag size={12} className="mr-1" />}
-                    <span>{order.customer}</span>
+                  <div 
+                    key={`${order.id}-${order.type}`} 
+                    className={`group relative flex items-center text-xs p-1 rounded-md cursor-pointer ${order.type === 'arrival' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}
+                  >
+                    {order.type === 'arrival' ? <Package size={12} className="mr-1 flex-shrink-0" /> : <Flag size={12} className="mr-1 flex-shrink-0" />}
+                    <span className="truncate">{order.user?.name || 'Walk-in Customer'}</span>
+                    <div className="absolute hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 z-10 bottom-full left-1/2 -translate-x-1/2 mb-2 w-max">
+                      <p><strong>{order.user?.name || 'Walk-in Customer'}</strong></p>
+                      <p>{order.service}</p>
+                      <p>Status: {order.status}</p>
+                    </div>
                   </div>
                 ))}
               </div>
