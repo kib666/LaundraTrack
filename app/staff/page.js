@@ -17,17 +17,18 @@ import {
     Mail,
     Calendar,
     Weight,
-    DollarSign,
+    TrendingUp,
     Loader
 } from 'lucide-react';
 
 // Utility Components
 const StatusBadge = ({ status }) => {
     const statusConfig = {
-        pending: { color: 'bg-yellow-100 text-yellow-800', text: 'Pending' },
-        in_wash: { color: 'bg-blue-100 text-blue-800', text: 'In Wash' },
-        ready: { color: 'bg-green-100 text-green-800', text: 'Ready' },
-        delivered: { color: 'bg-gray-100 text-gray-800', text: 'Delivered' }
+        'Received': { color: 'bg-yellow-100 text-yellow-800', text: 'Received' },
+        'In Wash': { color: 'bg-blue-100 text-blue-800', text: 'In Wash' },
+        'Ready': { color: 'bg-green-100 text-green-800', text: 'Ready' },
+        'Delivered': { color: 'bg-gray-100 text-gray-800', text: 'Delivered' },
+        'Cancelled': { color: 'bg-red-100 text-red-800', text: 'Cancelled' }
     };
 
     const config = statusConfig[status] || statusConfig.pending;
@@ -86,30 +87,30 @@ const TopBar = ({ onMenuToggle }) => {
 };
 
 // Staff Stats Component
-const StaffStats = ({ tasks }) => {
+const StaffStats = ({ orders }) => {
     const stats = [
         {
             title: 'Pending Tasks',
-            value: tasks.filter(t => t.status === 'pending').length.toString(),
+            value: orders.filter(o => o.status === 'Received').length.toString(),
             icon: Clock,
             color: 'bg-yellow-500'
         },
         {
             title: 'In Progress',
-            value: tasks.filter(t => t.status === 'in_wash').length.toString(),
+            value: orders.filter(o => o.status === 'In Wash').length.toString(),
             icon: Package,
             color: 'bg-blue-500'
         },
         {
             title: 'Ready for Delivery',
-            value: tasks.filter(t => t.status === 'ready').length.toString(),
+            value: orders.filter(o => o.status === 'Ready').length.toString(),
             icon: Truck,
             color: 'bg-green-500'
         },
         {
-            title: 'Today\'s Revenue',
-            value: `$${tasks.reduce((sum, task) => sum + task.total, 0).toFixed(2)}`,
-            icon: DollarSign,
+            title: "Today's Revenue",
+            value: `₱${orders.reduce((sum, order) => sum + order.total, 0).toFixed(2)}`,
+            icon: TrendingUp,
             color: 'bg-purple-500'
         }
     ];
@@ -133,55 +134,55 @@ const StaffStats = ({ tasks }) => {
     );
 };
 
-// Task Card Component
-const TaskCard = ({ task, onStatusUpdate }) => {
+// Order Card Component
+const OrderCard = ({ order, onStatusUpdate }) => {
     const getNextAction = (status) => {
         switch (status) {
-            case 'pending':
-                return { text: 'Start Wash', color: 'bg-blue-500 hover:bg-blue-600', nextStatus: 'in_wash' };
-            case 'in_wash':
-                return { text: 'Mark Ready', color: 'bg-green-500 hover:bg-green-600', nextStatus: 'ready' };
-            case 'ready':
-                return { text: 'Mark Delivered', color: 'bg-purple-500 hover:bg-purple-600', nextStatus: 'delivered' };
+            case 'Received':
+                return { text: 'Start Wash', color: 'bg-blue-500 hover:bg-blue-600', nextStatus: 'In Wash' };
+            case 'In Wash':
+                return { text: 'Mark Ready', color: 'bg-green-500 hover:bg-green-600', nextStatus: 'Ready' };
+            case 'Ready':
+                return { text: 'Mark Delivered', color: 'bg-purple-500 hover:bg-purple-600', nextStatus: 'Delivered' };
             default:
                 return null;
         }
     };
 
-    const nextAction = getNextAction(task.status);
+    const nextAction = getNextAction(order.status);
 
     return (
         <div className="bg-white rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                     <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900">{task.customer}</h3>
-                        <StatusBadge status={task.status} />
+                        <h3 className="text-lg font-semibold text-gray-900">{order.customer}</h3>
+                        <StatusBadge status={order.status} />
                     </div>
-                    <p className="text-sm text-gray-600 mb-1">Order ID: {task.id}</p>
-                    <p className="text-sm text-gray-600 mb-1">Weight: {task.weight}</p>
-                    <p className="text-sm text-gray-600 mb-1">Total: ${task.total.toFixed(2)}</p>
+                    <p className="text-sm text-gray-600 mb-1">Order ID: {order.id}</p>
+                    <p className="text-sm text-gray-600 mb-1">Weight: {order.weight} kg</p>
+                    <p className="text-sm text-gray-600 mb-1">Total: ₱{order.total.toFixed(2)}</p>
                 </div>
             </div>
 
             <div className="space-y-3 mb-4">
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                     <Phone size={16} />
-                    <span>{task.phone}</span>
+                    <span>{order.phone}</span>
                 </div>
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                     <MapPin size={16} />
-                    <span>{task.address}</span>
+                    <span>{order.deliveryAddress}</span>
                 </div>
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                     <Clock size={16} />
-                    <span>ETA: <LiveCountdown targetDate={task.eta} /></span>
+                    <span>ETA: <LiveCountdown targetDate={order.eta} /></span>
                 </div>
             </div>
 
             {nextAction && (
                 <button
-                    onClick={() => onStatusUpdate(task.id, nextAction.nextStatus)}
+                    onClick={() => onStatusUpdate(order.id, nextAction.nextStatus)}
                     className={`w-full px-4 py-2 text-white text-sm rounded-lg font-medium transition-colors ${nextAction.color}`}
                 >
                     {nextAction.text}
@@ -191,34 +192,34 @@ const TaskCard = ({ task, onStatusUpdate }) => {
     );
 };
 
-// Task List Component
-const TaskListView = ({ tasks, onStatusUpdate }) => {
-    const groupedTasks = {
-        pending: tasks.filter(task => task.status === 'pending'),
-        in_wash: tasks.filter(task => task.status === 'in_wash'),
-        ready: tasks.filter(task => task.status === 'ready')
+// Order List Component
+const OrderListView = ({ orders, onStatusUpdate }) => {
+    const groupedOrders = {
+        Received: orders.filter(order => order.status === 'Received'),
+        'In Wash': orders.filter(order => order.status === 'In Wash'),
+        Ready: orders.filter(order => order.status === 'Ready')
     };
 
     return (
         <div className="space-y-8">
-            {Object.entries(groupedTasks).map(([status, statusTasks]) => (
+            {Object.entries(groupedOrders).map(([status, statusOrders]) => (
                 <div key={status}>
                     <h2 className="text-xl font-semibold text-gray-800 mb-4 capitalize">
-                        {status.replace('_', ' ')} ({statusTasks.length})
+                        {status} ({statusOrders.length})
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {statusTasks.map((task) => (
-                            <TaskCard
-                                key={task.id}
-                                task={task}
+                        {statusOrders.map((order) => (
+                            <OrderCard
+                                key={order.id}
+                                order={order}
                                 onStatusUpdate={onStatusUpdate}
                             />
                         ))}
                     </div>
-                    {statusTasks.length === 0 && (
+                    {statusOrders.length === 0 && (
                         <div className="text-center py-8 text-gray-500">
                             <Clipboard size={48} className="mx-auto mb-4 text-gray-300" />
-                            <p>No {status.replace('_', ' ')} tasks</p>
+                            <p>No {status.toLowerCase()} orders</p>
                         </div>
                     )}
                 </div>
@@ -358,28 +359,27 @@ const ProfileView = () => {
 };
 
 // Deliveries Component
-const DeliveriesView = ({ tasks, onStatusUpdate }) => {
-    const readyTasks = tasks.filter(task => task.status === 'ready');
-
+const DeliveriesView = ({ orders, onStatusUpdate }) => {
+    const readyForDelivery = orders.filter(o => o.status === 'Ready');
+    
     return (
         <div>
-            <h2 className="text-xl font-semibold text-gray-800 mb-6">Ready for Delivery ({readyTasks.length})</h2>
-
-            {readyTasks.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                Ready for Delivery ({readyForDelivery.length})
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {readyForDelivery.map((order) => (
+                    <OrderCard
+                        key={order.id}
+                        order={order}
+                        onStatusUpdate={onStatusUpdate}
+                    />
+                ))}
+            </div>
+            {readyForDelivery.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
                     <Truck size={48} className="mx-auto mb-4 text-gray-300" />
-                    <p className="text-lg">No deliveries ready</p>
-                    <p className="text-sm">Items ready for delivery will appear here</p>
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {readyTasks.map((task) => (
-                        <TaskCard
-                            key={task.id}
-                            task={task}
-                            onStatusUpdate={onStatusUpdate}
-                        />
-                    ))}
+                    <p>No orders ready for delivery.</p>
                 </div>
             )}
         </div>
@@ -389,71 +389,74 @@ const DeliveriesView = ({ tasks, onStatusUpdate }) => {
 // Main Staff Page Component
 export default function StaffPage() {
     const [activeTab, setActiveTab] = useState('tasks');
-    const [tasks, setTasks] = useState([]);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    const fetchTasks = async () => {
+    const fetchOrders = async () => {
         try {
             setLoading(true);
             const response = await fetch('/api/orders');
-            const orders = await response.json();
-            setTasks(orders);
+            if (response.ok) {
+                const data = await response.json();
+                setOrders(Array.isArray(data) ? data : []);
+            } else {
+                console.error('Failed to fetch orders');
+            }
         } catch (error) {
-            console.error('Error fetching tasks:', error);
+            console.error('Error fetching orders:', error);
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchTasks();
+        fetchOrders();
     }, []);
 
-    const handleStatusUpdate = async (taskId, newStatus) => {
+    const handleStatusUpdate = async (orderId, newStatus) => {
         try {
-            const response = await fetch(`/api/orders/${taskId}`, {
+            const response = await fetch(`/api/orders/${orderId}`, {
                 method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ status: newStatus }),
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
             });
 
             if (response.ok) {
-                // Refresh the data to get the updated task
-                await fetchTasks();
+                fetchOrders();
             } else {
-                console.error('Failed to update task status');
+                console.error('Failed to update status');
             }
         } catch (error) {
-            console.error('Error updating task status:', error);
+            console.error('Error updating status:', error);
         }
     };
 
     const renderContent = () => {
+        if (loading) {
+            return (
+                <div className="flex justify-center items-center h-full">
+                    <Loader className="animate-spin text-blue-500" size={48} />
+                </div>
+            );
+        }
+
         switch (activeTab) {
             case 'tasks':
-                return <TaskListView tasks={tasks} onStatusUpdate={handleStatusUpdate} />;
+                return (
+                    <>
+                        <StaffStats orders={orders} />
+                        <OrderListView orders={orders} onStatusUpdate={handleStatusUpdate} />
+                    </>
+                );
             case 'deliveries':
-                return <DeliveriesView tasks={tasks} onStatusUpdate={handleStatusUpdate} />;
+                return <DeliveriesView orders={orders} onStatusUpdate={handleStatusUpdate} />;
             case 'profile':
                 return <ProfileView />;
             default:
-                return <TaskListView tasks={tasks} onStatusUpdate={handleStatusUpdate} />;
+                return null;
         }
     };
-
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center">
-                    <Loader className="mx-auto animate-spin text-green-500 mb-4" size={48} />
-                    <p className="text-gray-600">Loading tasks...</p>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -469,9 +472,6 @@ export default function StaffPage() {
                     <TopBar onMenuToggle={() => setIsMobileMenuOpen(true)} />
 
                     <div className="flex-1 p-6 overflow-y-auto">
-                        {activeTab === 'tasks' && (
-                            <StaffStats tasks={tasks} />
-                        )}
                         {renderContent()}
                     </div>
                 </div>
