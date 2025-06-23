@@ -22,8 +22,8 @@ const Sidebar = ({ activeTab, onTabChange }) => {
     return (
         <div className="w-64 bg-white shadow-md h-screen">
             <div className="p-4 border-b">
-                <Link href="/" legacyBehavior>
-                    <a className="text-xl font-bold text-gray-800">Laundry Tracker</a>
+                <Link href="/" className="text-xl font-bold text-gray-800">
+                    Laundry Tracker
                 </Link>
                 <p className="text-sm text-gray-500">Staff Portal</p>
             </div>
