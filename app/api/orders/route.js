@@ -24,8 +24,8 @@ export async function POST(request) {
     const body = await request.json();
     const { customerType, userId, customerName, phone, service, weight, deliveryAddress } = body;
 
-    // Basic price calculation (example: $2.5 per kg)
-    const pricePerKg = 2.5;
+    // Basic price calculation (example: ₱150 per kg)
+    const pricePerKg = 150;
     const total = parseFloat(weight) * pricePerKg;
     
     // Estimate ETA (example: 3 days from now)

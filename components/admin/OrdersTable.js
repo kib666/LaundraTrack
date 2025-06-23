@@ -82,7 +82,7 @@ const OrdersTable = ({ orders, onStatusUpdate }) => {
                                     <LiveCountdown targetDate={order.eta} />
                                 </td>
                                 <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    ${order.total.toFixed(2)}
+                                    ₱{order.total.toFixed(2)}
                                 </td>
                             </tr>
                         ))}

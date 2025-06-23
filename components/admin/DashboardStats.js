@@ -1,5 +1,5 @@
 import React from 'react';
-import { Package, Clock, Truck, DollarSign } from 'lucide-react';
+import { Package, Clock, Truck, TrendingUp } from 'lucide-react';
 
 const DashboardStats = ({ orders, appointments }) => {
     const stats = [
@@ -22,9 +22,9 @@ const DashboardStats = ({ orders, appointments }) => {
             color: 'bg-green-500'
         },
         {
-            title: 'Today\'s Revenue',
-            value: `$${orders.reduce((sum, order) => sum + order.total, 0)}`,
-            icon: DollarSign,
+            title: "Today's Revenue",
+            value: `₱${orders.reduce((sum, order) => sum + order.total, 0).toFixed(2)}`,
+            icon: TrendingUp,
             color: 'bg-purple-500'
         }
     ];
