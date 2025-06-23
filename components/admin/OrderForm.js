@@ -12,6 +12,7 @@ export default function OrderForm({ onSubmit, onCancel }) {
     service: 'Wash & Fold',
     weight: '',
     deliveryAddress: '',
+    finishDate: '',
   });
 
   useEffect(() => {
@@ -144,6 +145,17 @@ export default function OrderForm({ onSubmit, onCancel }) {
           onChange={handleChange}
           className="w-full p-2 border rounded-lg text-gray-900"
           step="0.1"
+          required
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Finish Date</label>
+        <input
+          type="date"
+          name="finishDate"
+          value={formData.finishDate}
+          onChange={handleChange}
+          className="w-full p-2 border rounded-lg text-gray-900"
           required
         />
       </div>

@@ -22,22 +22,18 @@ export async function GET() {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { customerType, userId, customerName, phone, service, weight, deliveryAddress } = body;
+    const { customerType, userId, customerName, phone, service, weight, deliveryAddress, finishDate } = body;
 
     // Basic price calculation (example: ₱150 per kg)
     const pricePerKg = 150;
     const total = parseFloat(weight) * pricePerKg;
     
-    // Estimate ETA (example: 3 days from now)
-    const eta = new Date();
-    eta.setDate(eta.getDate() + 3);
-
     let orderData = {
       service,
       weight: parseFloat(weight),
       status: 'Received',
       deliveryAddress,
-      eta,
+      eta: new Date(finishDate),
       total,
     };
 

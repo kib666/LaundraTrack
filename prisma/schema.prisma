@@ -36,16 +36,18 @@ model LaundryJob {
 }
 
 model Order {
-  id       String   @id @default(auto()) @map("_id") @db.ObjectId
-  customer String
-  phone    String
-  weight   String
-  status   String
-  eta      DateTime
-  total    Float
-  createdAt DateTime @default(now())
-  userId   String?  @db.ObjectId
-  user     User?    @relation(fields: [userId], references: [id])
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  customer        String
+  phone           String
+  weight          Float
+  status          String
+  service         String
+  deliveryAddress String?
+  eta             DateTime
+  total           Float
+  createdAt       DateTime  @default(now())
+  userId          String?   @db.ObjectId
+  user            User?     @relation(fields: [userId], references: [id])
 }
 
 model Appointment {

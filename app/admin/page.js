@@ -117,7 +117,8 @@ export default function AdminDashboard() {
         setIsOrderModalOpen(false);
         await fetchOrdersAndAppointments();
       } else {
-        console.error('Failed to create order');
+        const errorData = await response.json();
+        console.error('Failed to create order:', errorData.error || response.statusText);
       }
     } catch (error) {
       console.error('Error creating order:', error);
