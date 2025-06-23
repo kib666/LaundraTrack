@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Package, CalendarDays, BarChart3, Users } from 'lucide-react';
+import { Home, Package, Calendar, BarChart3, Users } from 'lucide-react';
 
 const Sidebar = () => {
     const pathname = usePathname();
@@ -11,7 +11,7 @@ const Sidebar = () => {
     const menuItems = [
         { key: 'dashboard', label: 'Dashboard', icon: Home, href: '/admin' },
         { key: 'orders', label: 'Orders', icon: Package, href: '/admin/orders' },
-        { key: 'appointments', label: 'Appointments', icon: CalendarDays, href: '/admin/appointments' },
+        { key: 'calendar', label: 'Calendar', icon: Calendar, href: '/admin/calendar' },
         { key: 'reports', label: 'Reports', icon: BarChart3, href: '/admin/reports' },
         { key: 'users', label: 'Users Management', icon: Users, href: '/admin/users' }
     ];

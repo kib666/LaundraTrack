@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import UserForm from '@/components/admin/UserForm';
 import { ArrowLeft, Loader } from 'lucide-react';
 
-export default function EditUserPage({ params }) {
+export default function EditUserPage() {
   const router = useRouter();
+  const params = useParams();
   const { id } = params;
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);

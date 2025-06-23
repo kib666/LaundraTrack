@@ -1,7 +1,7 @@
 import React from 'react';
 import { Package, Clock, Truck, TrendingUp } from 'lucide-react';
 
-const DashboardStats = ({ orders, appointments }) => {
+const DashboardStats = ({ orders }) => {
     const stats = [
         {
             title: 'Total Orders',
@@ -10,14 +10,8 @@ const DashboardStats = ({ orders, appointments }) => {
             color: 'bg-blue-500'
         },
         {
-            title: 'Pending Appointments',
-            value: appointments.filter(a => a.status === 'pending').length.toString(),
-            icon: Clock,
-            color: 'bg-yellow-500'
-        },
-        {
             title: 'Ready for Delivery',
-            value: orders.filter(o => o.status === 'ready').length.toString(),
+            value: orders.filter(o => o.status === 'Ready').length.toString(),
             icon: Truck,
             color: 'bg-green-500'
         },

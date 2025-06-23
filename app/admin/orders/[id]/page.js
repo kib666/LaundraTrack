@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Loader } from 'lucide-react';
 import EditOrderForm from '@/components/admin/EditOrderForm';
 
-export default function EditOrderPage({ params }) {
+export default function EditOrderPage() {
   const router = useRouter();
+  const params = useParams();
   const { id } = params;
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
