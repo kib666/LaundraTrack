@@ -6,6 +6,7 @@ export default function UserForm({ user, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    phoneNumber: '',
     role: 'STAFF',
     password: '',
   });
@@ -16,11 +17,12 @@ export default function UserForm({ user, onSubmit, onCancel }) {
       setFormData({
         name: user.name || '',
         email: user.email || '',
+        phoneNumber: user.phoneNumber || '',
         role: user.role || 'STAFF',
         password: '',
       });
     } else {
-      setFormData({ name: '', email: '', role: 'STAFF', password: '' });
+      setFormData({ name: '', email: '', phoneNumber: '', role: 'STAFF', password: '' });
     }
   }, [user]);
 
@@ -57,6 +59,16 @@ export default function UserForm({ user, onSubmit, onCancel }) {
           onChange={handleChange}
           className="w-full p-2 border rounded-lg text-gray-900"
           required
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+        <input
+          type="tel"
+          name="phoneNumber"
+          value={formData.phoneNumber}
+          onChange={handleChange}
+          className="w-full p-2 border rounded-lg text-gray-900"
         />
       </div>
       <div>

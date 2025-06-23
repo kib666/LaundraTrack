@@ -1,50 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, Package, CheckCircle, Truck, AlertCircle, User, Phone } from 'lucide-react';
-
-const StatusBadge = ({ status }) => {
-    const statusConfig = {
-        pending: { color: 'bg-yellow-100 text-yellow-800', text: 'Pending' },
-        in_wash: { color: 'bg-blue-100 text-blue-800', text: 'In Wash' },
-        ready: { color: 'bg-green-100 text-green-800', text: 'Ready' },
-        delivered: { color: 'bg-gray-100 text-gray-800', text: 'Delivered' }
-    };
-
-    const config = statusConfig[status] || statusConfig.pending;
-
-    return (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
-            {config.text}
-        </span>
-    );
-};
-
-const LiveCountdown = ({ targetDate }) => {
-    const [timeLeft, setTimeLeft] = useState('');
-
-    useEffect(() => {
-        const timer = setInterval(() => {
-            const now = new Date().getTime();
-            const target = new Date(targetDate).getTime();
-            const difference = target - now;
-
-            if (difference > 0) {
-                const hours = Math.floor(difference / (1000 * 60 * 60));
-                const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-                setTimeLeft(`${hours}h ${minutes}m`);
-            } else {
-                setTimeLeft('Overdue!');
-            }
-        }, 1000);
-
-        return () => clearInterval(timer);
-    }, [targetDate]);
-
-    return (
-        <span className={`text-sm ${timeLeft === 'Overdue!' ? 'text-red-600 font-medium' : 'text-gray-600'}`}>
-            {timeLeft}
-        </span>
-    );
-};
+import StatusBadge from '@/components/common/StatusBadge';
 
 const TaskListCard = ({ tasks, onStatusUpdate, staffName = "Staff Member" }) => {
     const [filter, setFilter] = useState('all');
@@ -189,7 +145,7 @@ const TaskCard = ({ task, onAction }) => {
                         </div>
                         <div className="flex items-center gap-2">
                             <Clock size={14} />
-                            <span>ETA: <LiveCountdown targetDate={task.eta} /></span>
+                            <span>ETA: {new Date(task.eta).toLocaleDateString()}</span>
                         </div>
                     </div>
 

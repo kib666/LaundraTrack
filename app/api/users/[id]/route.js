@@ -14,6 +14,7 @@ export async function GET(request, { params }) {
         id: true,
         name: true,
         email: true,
+        phoneNumber: true,
         role: true,
       }
     });
@@ -34,9 +35,9 @@ export async function PATCH(request, { params }) {
   try {
     const { id } = params;
     const body = await request.json();
-    const { name, email, role, password } = body;
+    const { name, email, role, password, phoneNumber } = body;
 
-    const data = { name, email, role };
+    const data = { name, email, role, phoneNumber };
 
     if (password) {
       data.password = await bcrypt.hash(password, 10);
@@ -49,6 +50,7 @@ export async function PATCH(request, { params }) {
         id: true,
         name: true,
         email: true,
+        phoneNumber: true,
         role: true,
       }
     });
@@ -68,6 +70,12 @@ export async function DELETE(request, { params }) {
   try {
     const { id } = params;
 
+    // First, delete related orders
+    await prisma.order.deleteMany({
+      where: { userId: id },
+    });
+    
+    // Then, delete the user
     await prisma.user.delete({
       where: { id },
     });

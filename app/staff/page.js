@@ -22,7 +22,6 @@ import {
 } from 'lucide-react';
 import Sidebar from '@/components/staff/Sidebar';
 import StatusBadge from '@/components/common/StatusBadge';
-import LiveCountdown from '@/components/common/LiveCountdown';
 
 // Utility Components
 const TopBar = ({ onMenuToggle }) => {

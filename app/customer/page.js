@@ -23,6 +23,10 @@ import {
     PlusCircle
 } from 'lucide-react';
 import StatusProgressTracker from '@/components/customer/StatusProgressTracker';
+import StatusBadge from '@/components/common/StatusBadge';
+import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 // Utility Components
 const LiveCountdown = ({ targetDate }) => {
@@ -47,23 +51,6 @@ const LiveCountdown = ({ targetDate }) => {
     }, [targetDate]);
 
     return <span className="text-sm text-gray-600">{timeLeft}</span>;
-};
-
-const StatusBadge = ({ status }) => {
-    const statusConfig = {
-        PENDING: { color: 'bg-yellow-100 text-yellow-800', text: 'Pending' },
-        IN_PROGRESS: { color: 'bg-blue-100 text-blue-800', text: 'In Wash' },
-        COMPLETED: { color: 'bg-green-100 text-green-800', text: 'Ready' },
-        DELIVERED: { color: 'bg-gray-100 text-gray-800', text: 'Delivered' },
-    };
-
-    const config = statusConfig[status] || statusConfig.PENDING;
-
-    return (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
-            {config.text}
-        </span>
-    );
 };
 
 const OrderLookupForm = ({ onLookup, onSchedule }) => {
@@ -181,11 +168,6 @@ const OrderDetails = ({ order, onBack }) => {
                     <p className="text-sm text-gray-600 mb-2">Estimated delivery time:</p>
                     <div className="text-lg font-semibold text-blue-600">
                         <span>{new Date(order.eta).toLocaleDateString()}</span>
-                        {new Date(order.eta) > new Date() && (
-                            <span className="block text-xs font-normal">
-                                <LiveCountdown targetDate={order.eta} />
-                            </span>
-                        )}
                     </div>
                 </StatusProgressTracker>
             </div>

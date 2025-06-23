@@ -18,6 +18,7 @@ export async function GET(request) {
         id: true,
         name: true,
         email: true,
+        phoneNumber: true,
         role: true,
       }
     });
@@ -32,25 +33,36 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { name, email, password, role } = body;
+    const { name, email, password, role, phoneNumber } = body;
 
-    if (!name || !email || !password || !role) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!name || !email || !role) {
+      return NextResponse.json({ error: 'Missing name, email, or role' }, { status: 400 });
+    }
+     if (!password && role !== 'CUSTOMER') {
+      return NextResponse.json({ error: 'Password is required for non-customer roles' }, { status: 400 });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const data = {
+      name,
+      email,
+      role,
+      phoneNumber,
+    };
+
+    if (password) {
+      data.password = await bcrypt.hash(password, 10);
+    } else {
+      // Generate a random password for customers if not provided
+      data.password = await bcrypt.hash(Math.random().toString(36).slice(-8), 10);
+    }
 
     const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        role,
-      },
+      data,
       select: {
         id: true,
         name: true,
         email: true,
+        phoneNumber: true,
         role: true,
       }
     });
