@@ -1,6 +1,7 @@
 // /app/api/orders/route.js (or .ts)
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
 
 export async function GET() {
   try {
@@ -40,10 +41,13 @@ export async function POST(request) {
 
     // Create a new user if the customer is new
     if (customerType === 'new' && customerName && phone) {
+      const hashedPassword = await bcrypt.hash(Math.random().toString(36).slice(-8), 10);
       const newUser = await prisma.user.create({
         data: {
           name: customerName,
           phoneNumber: phone,
+          email: `${phone}@placeholder.com`, // Create a placeholder email
+          password: hashedPassword, // Create a random password
           role: 'CUSTOMER',
         },
       });

@@ -4,9 +4,9 @@ import bcrypt from 'bcryptjs';
 
 export async function POST(request) {
   try {
-    const { name, email, password, phone } = await request.json();
+    const { name, email, password, phoneNumber } = await request.json();
 
-    if (!name || !email || !password || !phone) {
+    if (!name || !email || !password || !phoneNumber) {
       return NextResponse.json(
         { error: 'All fields are required.' },
         { status: 400 }
@@ -14,7 +14,7 @@ export async function POST(request) {
     }
 
     const existingUser = await prisma.user.findFirst({
-      where: { OR: [{ email }, { phoneNumber: phone }] },
+      where: { OR: [{ email }, { phoneNumber: phoneNumber }] },
     });
 
     if (existingUser) {
@@ -30,7 +30,7 @@ export async function POST(request) {
       data: {
         name,
         email,
-        phoneNumber: phone,
+        phoneNumber: phoneNumber,
         password: hashedPassword,
         role: 'CUSTOMER',
       },
