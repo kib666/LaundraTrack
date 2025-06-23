@@ -6,6 +6,9 @@ export async function GET(request, { params }) {
     const { id } = params;
     const order = await prisma.order.findUnique({
       where: { id },
+      include: {
+        user: true,
+      },
     });
 
     if (!order) {
@@ -24,16 +27,22 @@ export async function PATCH(request, { params }) {
     const { id } = params;
     const body = await request.json();
 
-    const dataToUpdate = { ...body };
+    const { service, weight, deliveryAddress, status, eta, total, notes } = body;
+    const dataToUpdate = {
+      service,
+      deliveryAddress,
+      status,
+      notes,
+    };
 
-    if (body.weight) {
-      dataToUpdate.weight = parseFloat(body.weight);
+    if (weight) {
+      dataToUpdate.weight = parseFloat(weight);
     }
-    if (body.total) {
-      dataToUpdate.total = parseFloat(body.total);
+    if (total) {
+      dataToUpdate.total = parseFloat(total);
     }
-    if (body.eta) {
-      dataToUpdate.eta = new Date(body.eta);
+    if (eta) {
+      dataToUpdate.eta = new Date(eta);
     }
 
     const updatedOrder = await prisma.order.update({

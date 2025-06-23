@@ -91,6 +91,26 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleDateUpdate = async (orderId, newEta) => {
+    try {
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ eta: newEta }),
+      });
+
+      if (response.ok) {
+        await fetchOrders();
+      } else {
+        console.error('Failed to update order ETA');
+      }
+    } catch (error) {
+      console.error('Error updating order ETA:', error);
+    }
+  };
+
   const handleCreateOrder = async (formData) => {
     try {
       const response = await fetch('/api/orders', {
@@ -137,7 +157,7 @@ export default function AdminDashboard() {
               <span>Add Order</span>
             </button>
           </div>
-          <OrdersTable orders={orders} onStatusUpdate={handleStatusUpdate} />
+          <OrdersTable orders={orders} onStatusUpdate={handleStatusUpdate} onDateUpdate={handleDateUpdate} />
         </div>
       </div>
 

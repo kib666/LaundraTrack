@@ -10,12 +10,12 @@ const formatDateForInput = (dateString) => {
 
 export default function EditOrderForm({ order, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
-    customer: '',
-    phone: '',
+    customerName: '',
+    customerPhone: '',
     service: 'Wash & Fold',
     weight: '',
     deliveryAddress: '',
-    status: 'Received',
+    status: 'PENDING',
     eta: '',
     total: '',
   });
@@ -23,12 +23,12 @@ export default function EditOrderForm({ order, onSubmit, onCancel }) {
   useEffect(() => {
     if (order) {
       setFormData({
-        customer: order.customer || '',
-        phone: order.phone || '',
+        customerName: order.user?.name || 'Walk-in Customer',
+        customerPhone: order.user?.phoneNumber || '',
         service: order.service || 'Wash & Fold',
         weight: order.weight?.toString() || '',
         deliveryAddress: order.deliveryAddress || '',
-        status: order.status || 'Received',
+        status: order.status || 'PENDING',
         eta: formatDateForInput(order.eta),
         total: order.total?.toString() || '',
       });
@@ -57,9 +57,8 @@ export default function EditOrderForm({ order, onSubmit, onCancel }) {
           <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name</label>
           <input
             type="text"
-            name="customer"
-            value={formData.customer}
-            onChange={handleChange}
+            name="customerName"
+            value={formData.customerName}
             className="w-full p-2 border rounded-lg text-gray-900 bg-gray-100"
             readOnly
           />
@@ -68,10 +67,10 @@ export default function EditOrderForm({ order, onSubmit, onCancel }) {
           <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
           <input
             type="text"
-            name="phone"
-            value={formData.phone}
-            onChange={handleChange}
-            className="w-full p-2 border rounded-lg text-gray-900"
+            name="customerPhone"
+            value={formData.customerPhone}
+            className="w-full p-2 border rounded-lg text-gray-900 bg-gray-100"
+            readOnly
           />
         </div>
         <div>
@@ -86,11 +85,11 @@ export default function EditOrderForm({ order, onSubmit, onCancel }) {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
           <select name="status" value={formData.status} onChange={handleChange} className="w-full p-2 border rounded-lg text-gray-900">
-            <option>Received</option>
-            <option>In Wash</option>
-            <option>Ready</option>
-            <option>Delivered</option>
-            <option>Cancelled</option>
+            <option value="PENDING">Pending</option>
+            <option value="IN_PROGRESS">In Progress</option>
+            <option value="COMPLETED">Ready for Delivery</option>
+            <option value="DELIVERED">Delivered</option>
+            <option value="CANCELLED">Cancelled</option>
           </select>
         </div>
         <div>

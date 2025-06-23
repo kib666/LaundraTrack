@@ -12,7 +12,7 @@ export default function OrderForm({ onSubmit, onCancel }) {
     service: 'Wash & Fold',
     weight: '',
     deliveryAddress: '',
-    finishDate: '',
+    eta: '',
   });
 
   useEffect(() => {
@@ -29,8 +29,10 @@ export default function OrderForm({ onSubmit, onCancel }) {
         console.error('Error fetching customers:', error);
       }
     };
-    fetchCustomers();
-  }, []);
+    if (customerType === 'existing') {
+        fetchCustomers();
+    }
+  }, [customerType]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -49,10 +51,10 @@ export default function OrderForm({ onSubmit, onCancel }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
+      <div className="text-gray-900">
         <label className="block text-sm font-medium text-gray-700 mb-1">Customer Type</label>
         <div className="flex items-center space-x-4">
-          <label className="flex items-center text-gray-800">
+          <label className="flex items-center">
             <input
               type="radio"
               name="customerType"
@@ -63,7 +65,7 @@ export default function OrderForm({ onSubmit, onCancel }) {
             />
             New Customer
           </label>
-          <label className="flex items-center text-gray-800">
+          <label className="flex items-center">
             <input
               type="radio"
               name="customerType"
@@ -78,7 +80,7 @@ export default function OrderForm({ onSubmit, onCancel }) {
       </div>
 
       {customerType === 'new' ? (
-        <>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name</label>
             <input
@@ -101,7 +103,7 @@ export default function OrderForm({ onSubmit, onCancel }) {
               required={customerType === 'new'}
             />
           </div>
-        </>
+        </div>
       ) : (
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Select Customer</label>
@@ -115,49 +117,51 @@ export default function OrderForm({ onSubmit, onCancel }) {
             <option value="">-- Select a customer --</option>
             {existingCustomers.map(customer => (
               <option key={customer.id} value={customer.id}>
-                {customer.name} - {customer.email}
+                {customer.name} - {customer.phoneNumber}
               </option>
             ))}
           </select>
         </div>
       )}
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Service Type</label>
-        <select
-          name="service"
-          value={formData.service}
-          onChange={handleChange}
-          className="w-full p-2 border rounded-lg text-gray-900"
-        >
-          <option>Wash & Fold</option>
-          <option>Dry Clean</option>
-          <option>Wash & Iron</option>
-          <option>Express Service</option>
-        </select>
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
-        <input
-          type="number"
-          name="weight"
-          value={formData.weight}
-          onChange={handleChange}
-          className="w-full p-2 border rounded-lg text-gray-900"
-          step="0.1"
-          required
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Finish Date</label>
-        <input
-          type="date"
-          name="finishDate"
-          value={formData.finishDate}
-          onChange={handleChange}
-          className="w-full p-2 border rounded-lg text-gray-900"
-          required
-        />
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
+            <input
+            type="number"
+            name="weight"
+            value={formData.weight}
+            onChange={handleChange}
+            className="w-full p-2 border rounded-lg text-gray-900"
+            step="0.1"
+            required
+            />
+        </div>
+         <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Service Type</label>
+            <select
+            name="service"
+            value={formData.service}
+            onChange={handleChange}
+            className="w-full p-2 border rounded-lg text-gray-900"
+            >
+            <option>Wash & Fold</option>
+            <option>Dry Clean</option>
+            <option>Wash & Iron</option>
+            <option>Express Service</option>
+            </select>
+        </div>
+        <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Pickup Date</label>
+            <input
+            type="date"
+            name="eta"
+            value={formData.eta}
+            onChange={handleChange}
+            className="w-full p-2 border rounded-lg text-gray-900"
+            required
+            />
+        </div>
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Address</label>
