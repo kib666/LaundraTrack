@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Edit, Trash2, Loader, AlertTriangle } from 'lucide-react';
+import { Plus, Edit, Trash2, Loader, AlertTriangle } from 'lucide-react';
 import Modal from '@/components/common/Modal';
 import UserForm from '@/components/admin/UserForm';
 

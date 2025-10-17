@@ -1,82 +1,136 @@
-// /app/api/orders/route.js (or .ts)
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import bcrypt from 'bcryptjs';
+import { connectDB } from '@/lib/db/mongodb';
+import { Order } from '@/lib/db/models';
+import { authMiddleware, requireApproval } from '@/lib/auth/middleware';
+import { v4 as uuidv4 } from 'uuid';
 
-export async function GET() {
+// GET - Fetch orders
+export async function GET(request) {
   try {
-    const orders = await prisma.order.findMany({
-      include: {
-        user: true,
+    await connectDB();
+
+    // Check authentication
+    const auth = await authMiddleware(request);
+    if (auth.error) {
+      return Response.json({ success: false, message: auth.error }, { status: auth.status });
+    }
+
+    // Check approval
+    const approval = requireApproval(auth.user);
+    if (approval.error) {
+      return Response.json({ success: false, message: approval.error }, { status: approval.status });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+
+    // Build filter based on user role
+    const filter = {};
+    if (auth.user.role === 'customer') {
+      filter.customerId = auth.user.id;
+    }
+    if (status) filter.status = status;
+
+    // Fetch orders with pagination
+    const orders = await Order.find(filter)
+      .populate('customerId', 'firstName lastName email phone')
+      .populate('staffId', 'firstName lastName email')
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    const total = await Order.countDocuments(filter);
+
+    return Response.json(
+      {
+        success: true,
+        orders,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit),
+        },
       },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    });
-    return NextResponse.json(orders);
+      { status: 200 }
+    );
   } catch (error) {
-    console.error('[GET /api/orders] Error:', error);
-    return new NextResponse(
-      JSON.stringify({ error: 'Internal Server Error' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    console.error('Fetch orders error:', error);
+    return Response.json(
+      { success: false, message: 'Failed to fetch orders', error: error.message },
+      { status: 500 }
     );
   }
 }
 
+// POST - Create order
 export async function POST(request) {
   try {
-    const body = await request.json();
-    const { 
-      customerType, 
-      userId, 
-      customerName, 
-      phone, 
-      service, 
-      weight, 
-      deliveryAddress, 
-      eta 
-    } = body;
+    await connectDB();
 
-    let customerId = userId;
-
-    // Create a new user if the customer is new
-    if (customerType === 'new' && customerName && phone) {
-      const hashedPassword = await bcrypt.hash(Math.random().toString(36).slice(-8), 10);
-      const newUser = await prisma.user.create({
-        data: {
-          name: customerName,
-          phoneNumber: phone,
-          email: `${phone}@placeholder.com`, // Create a placeholder email
-          password: hashedPassword, // Create a random password
-          role: 'CUSTOMER',
-        },
-      });
-      customerId = newUser.id;
+    // Check authentication
+    const auth = await authMiddleware(request);
+    if (auth.error) {
+      return Response.json({ success: false, message: auth.error }, { status: auth.status });
     }
 
-    if (!customerId) {
-      return NextResponse.json({ error: 'Customer information is required' }, { status: 400 });
+    // Check approval
+    const approval = requireApproval(auth.user);
+    if (approval.error) {
+      return Response.json({ success: false, message: approval.error }, { status: approval.status });
     }
 
-    // Calculate total price (example calculation)
-    const pricePerKg = 40; // Example price
-    const total = parseFloat(weight) * pricePerKg;
+    const { items, totalAmount, description, pickupAddress, deliveryAddress, pickupDate, deliveryDate, serviceType } =
+      await request.json();
 
-    const newOrder = await prisma.order.create({
-      data: {
-        userId: customerId,
-        service,
-        weight: parseFloat(weight),
-        deliveryAddress,
-        status: 'PENDING',
-        eta: new Date(eta),
-        total,
-      },
+    // Validation
+    if (!items || !totalAmount || !pickupAddress || !deliveryAddress) {
+      return Response.json(
+        { success: false, message: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    if (totalAmount <= 0) {
+      return Response.json(
+        { success: false, message: 'Invalid total amount' },
+        { status: 400 }
+      );
+    }
+
+    // Create order
+    const trackingNumber = `ORD-${Date.now()}-${uuidv4().slice(0, 8).toUpperCase()}`;
+    const order = new Order({
+      trackingNumber,
+      customerId: auth.user.id,
+      items,
+      totalAmount,
+      description,
+      pickupAddress,
+      deliveryAddress,
+      pickupDate: pickupDate ? new Date(pickupDate) : null,
+      deliveryDate: deliveryDate ? new Date(deliveryDate) : null,
+      serviceType: serviceType || 'wash',
+      status: 'pending',
+      paymentStatus: 'pending',
     });
 
-    return NextResponse.json(newOrder, { status: 201 });
+    await order.save();
+
+    return Response.json(
+      {
+        success: true,
+        message: 'Order created successfully',
+        order,
+      },
+      { status: 201 }
+    );
   } catch (error) {
-    console.error(`[POST /api/orders] Error:`, error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('Create order error:', error);
+    return Response.json(
+      { success: false, message: 'Failed to create order', error: error.message },
+      { status: 500 }
+    );
   }
 }

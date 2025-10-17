@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Package, Plus, Loader, CheckCircle } from 'lucide-react';
+import { Plus, Loader, CheckCircle } from 'lucide-react';
 import OrdersTable from '@/components/admin/OrdersTable';
 import Modal from '@/components/common/Modal';
 import OrderForm from '@/components/admin/OrderForm';

@@ -3,19 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import {
-    Calendar,
-    Clock,
     Package,
     Truck,
-    User,
-    CheckCircle,
-    Phone,
-    Mail,
-    CalendarCheck,
     CalendarDays,
     X,
     Loader,
-    Tag,
     LogIn,
     UserPlus,
     LogOut,
@@ -25,9 +17,9 @@ import {
 import StatusProgressTracker from '@/components/customer/StatusProgressTracker';
 import StatusBadge from '@/components/common/StatusBadge';
 
-const OrderLookupForm = ({ onLookup, onSchedule, isLoading }) => {
+const OrderLookupForm = ({ onLookup, isLoading }) => {
     const [searchTerm, setSearchTerm] = useState('');
-    const [searchType, setSearchType] = useState('phone');
+    const [searchType] = useState('phone');
 
     const handleSubmit = (e) => {
         e.preventDefault();

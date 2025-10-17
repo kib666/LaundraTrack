@@ -25,7 +25,7 @@ export default function EditOrderPage() {
           } else {
             setError('Failed to fetch order details.');
           }
-        } catch (err) {
+        } catch {
           setError('An error occurred while fetching order details.');
         } finally {
           setLoading(false);

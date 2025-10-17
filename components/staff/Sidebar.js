@@ -4,12 +4,7 @@ import Link from 'next/link';
 import {
     Clipboard,
     Truck,
-    User,
-    Package,
-    Clock,
-    CheckCircle,
-    Home,
-    Calendar
+    User
 } from 'lucide-react';
 
 const Sidebar = ({ activeTab, onTabChange }) => {

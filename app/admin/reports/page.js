@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Loader, AlertCircle, BarChart, Users, ShoppingBag, DollarSign } from 'lucide-react';
-import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const StatCard = ({ title, value, icon, change, changeType }) => (
     <div className="bg-white p-6 rounded-lg shadow-sm border">
