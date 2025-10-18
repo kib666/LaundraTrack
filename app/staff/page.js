@@ -268,10 +268,6 @@ const OrderListView = ({ orders, onStatusUpdate, onCancel }) => {
 
 const ProfileView = ({ session }) => {
   const staffMember = session?.user || {};
-  const fullName =
-    staffMember.name ||
-    `${staffMember.firstName || ''} ${staffMember.lastName || ''}`.trim() ||
-    'Staff Member';
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({

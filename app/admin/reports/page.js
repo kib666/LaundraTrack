@@ -162,7 +162,6 @@ export default function ReportsPage() {
     if (!orders.length) return { chartData: [], totalRevenue: 0, totalOrders: 0, newCustomers: 0 };
 
     const chartDataMap = {};
-    const now = new Date();
 
     orders.forEach((order) => {
       const orderDate = new Date(order.createdAt);
