@@ -12,7 +12,6 @@ import {
   Clipboard,
   TrendingUp,
   Loader,
-  AlertTriangle,
   Calendar,
 } from 'lucide-react';
 import Sidebar from '@/components/staff/Sidebar';

@@ -50,7 +50,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function ReportsPage() {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const [orders, setOrders] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -99,7 +99,7 @@ export default function ReportsPage() {
           try {
             const parsed = JSON.parse(trimmed);
             return parsed?.message || parsed?.error || trimmed;
-          } catch (parseErr) {
+          } catch {
             return trimmed;
           }
         };

@@ -8,7 +8,7 @@ import Modal from '@/components/common/Modal';
 import OrderForm from '@/components/admin/OrderForm';
 
 export default function OrdersPage() {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);

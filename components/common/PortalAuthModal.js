@@ -6,7 +6,7 @@ import { X, Loader } from 'lucide-react';
 import Modal from './Modal';
 
 const PortalAuthModal = ({ isOpen, portalType, onClose }) => {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const [isRegister, setIsRegister] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');

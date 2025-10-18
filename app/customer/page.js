@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useSession, signIn, signOut } from 'next-auth/react';
-import { getSession } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import {
   Package,
   Truck,
@@ -32,12 +31,11 @@ const broadcastOrderUpdate = () => {
 
 const OrderLookupForm = ({ onLookup, isLoading }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [searchType] = useState('phone');
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (searchTerm.trim()) {
-      onLookup(searchTerm.trim(), searchType);
+      onLookup(searchTerm.trim(), 'phone');
     }
   };
 
@@ -383,7 +381,7 @@ const AuthForm = ({ isRegister = false }) => {
   );
 };
 
-const NewOrderForm = ({ userId, onOrderCreated }) => {
+const NewOrderForm = ({ onOrderCreated }) => {
   const { data: session } = useSession();
   const [weight, setWeight] = useState('');
   const [service, setService] = useState('Wash & Fold');
@@ -770,7 +768,7 @@ const LoggedInDashboard = ({ user }) => {
     }
   };
 
-  const handleDeliveryAddressUpdate = async (orderId, address, orderStatus) => {
+  const handleDeliveryAddressUpdate = async (orderId, address) => {
     if (!session?.user?.token) {
       alert('Authentication token missing. Please log in again.');
       return;

@@ -130,7 +130,6 @@ const CalendarSummary = ({ orders, currentRange }) => {
 };
 
 export default function OrderCalendarView({ orders }) {
-  const [currentDate, setCurrentDate] = useState(new Date());
   const calendarRef = useRef(null);
   const [currentRange, setCurrentRange] = useState(null);
   const [displayDate, setDisplayDate] = useState(new Date());

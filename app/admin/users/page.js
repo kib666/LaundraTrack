@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Loader, AlertTriangle, Lock } from 'lucide-react';
-import { useSession, signIn } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import Modal from '@/components/common/Modal';
 import UserForm from '@/components/admin/UserForm';
 

@@ -1,7 +1,6 @@
 import { connectDB } from '@/lib/db/mongodb';
 import { User } from '@/lib/db/models';
 import { authMiddleware, requireRole } from '@/lib/auth/middleware';
-import bcrypt from 'bcryptjs';
 
 // GET - Fetch users (admin only)
 export async function GET(request) {
