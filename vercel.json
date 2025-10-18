@@ -4,23 +4,6 @@
   "installCommand": "npm ci",
   "framework": "nextjs",
   "regions": ["sfo1"],
-  "env": [
-    {
-      "key": "NEXT_PUBLIC_API_URL",
-      "description": "Backend API URL",
-      "value": "@backend-api-url"
-    },
-    {
-      "key": "NEXTAUTH_URL",
-      "description": "NextAuth URL (your deployed domain)",
-      "value": "@nextauth-url"
-    },
-    {
-      "key": "NEXTAUTH_SECRET",
-      "description": "NextAuth secret key",
-      "value": "@nextauth-secret"
-    }
-  ],
   "headers": [
     {
       "source": "/api/:path*",
