@@ -20,6 +20,7 @@
 ## ✨ Features
 
 ### 👤 Customer Portal
+
 - 📦 Track order status in real-time
 - 📅 Book pickup and delivery appointments
 - 🔐 Secure user authentication
@@ -27,6 +28,7 @@
 - 📱 Mobile-responsive interface
 
 ### 👨‍💼 Admin Portal
+
 - 📊 Dashboard with revenue analytics
 - 👥 Staff and user management
 - 📋 Complete order management
@@ -34,6 +36,7 @@
 - 📈 Business analytics and reports
 
 ### 🚚 Staff Portal
+
 - ✅ View assigned tasks
 - 📍 Update delivery status
 - 📝 Track daily operations
@@ -43,15 +46,15 @@
 
 ## 🛠️ Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | Next.js 14, React 18, TypeScript |
-| **Styling** | Tailwind CSS, Lucide Icons |
-| **Authentication** | NextAuth.js |
-| **API Client** | Axios |
-| **Backend** | Node.js, Express (to be built) |
-| **Database** | MongoDB (to be integrated) |
-| **Deployment** | Vercel (frontend) |
+| Layer              | Technology                       |
+| ------------------ | -------------------------------- |
+| **Frontend**       | Next.js 14, React 18, TypeScript |
+| **Styling**        | Tailwind CSS, Lucide Icons       |
+| **Authentication** | NextAuth.js                      |
+| **API Client**     | Axios                            |
+| **Backend**        | Node.js, Express (to be built)   |
+| **Database**       | MongoDB (to be integrated)       |
+| **Deployment**     | Vercel (frontend)                |
 
 ---
 
@@ -65,6 +68,7 @@ Make sure you have installed:
 - A modern web browser
 
 **Check versions:**
+
 ```bash
 node --version
 npm --version
@@ -76,28 +80,34 @@ git --version
 ## 🚀 Installation
 
 ### 1️⃣ Clone the Repository
+
 ```bash
 git clone https://github.com/yourusername/laudratrack.git
 cd laudratrack
 ```
 
 ### 2️⃣ Install Dependencies
+
 ```bash
 npm install
 ```
 
 Or with yarn:
+
 ```bash
 yarn install
 ```
 
 ### 3️⃣ Setup Environment Variables
+
 Copy the example environment file:
+
 ```bash
 cp .env.example .env.local
 ```
 
 Edit `.env.local` and update values:
+
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:3001
 NEXTAUTH_URL=http://localhost:3000
@@ -109,7 +119,9 @@ NEXTAUTH_SECRET=your-secret-key-here
 ## 🎯 Running Locally
 
 ### Development Mode
+
 Start the development server:
+
 ```bash
 npm run dev
 ```
@@ -117,12 +129,14 @@ npm run dev
 The application will be available at: **http://localhost:3000**
 
 ### Build for Production
+
 ```bash
 npm run build
 npm start
 ```
 
 ### Linting & Formatting
+
 ```bash
 # Check code quality
 npm run lint
@@ -142,6 +156,7 @@ npm run type-check
 ## 🔧 Environment Setup
 
 ### `.env.local` - Local Development
+
 ```env
 # Frontend Configuration
 NEXT_PUBLIC_API_URL=http://localhost:3001
@@ -152,6 +167,7 @@ NEXTAUTH_SECRET=dev-secret-key-change-in-production
 ```
 
 ### `.env.example` - Template for Production
+
 Copy this file and update with actual production values before deployment.
 
 ---
@@ -221,9 +237,17 @@ laudratrack/
 
 ## 🚀 Deployment
 
+> **Environment Profiles**
+>
+> - `.env.local` → tuned for LAN testing at `http://192.168.100.112:3000`
+> - `.env.production` → tuned for Vercel at `https://laundra-track.vercel.app`
+>
+> Copy whichever profile you need and restart the dev server after changes.
+
 ### Vercel (Recommended for Frontend)
 
 1. **Push to GitHub**
+
    ```bash
    git add .
    git commit -m "Initial commit"
@@ -238,14 +262,15 @@ laudratrack/
 
 3. **Configure Environment Variables**
    - In Vercel Dashboard → Settings → Environment Variables
-   - Add production values:
+   - Add production values (match `.env.production`):
      ```
-     NEXT_PUBLIC_API_URL=your-backend-url
-     NEXTAUTH_URL=your-deployed-url
+     NEXT_PUBLIC_API_URL=https://laundra-track.vercel.app/api
+     NEXTAUTH_URL=https://laundra-track.vercel.app
      NEXTAUTH_SECRET=strong-secret-key
      ```
 
 ### Other Hosting Options
+
 - **Netlify** - Similar to Vercel, supports Next.js
 - **Railway** - Full-stack deployment
 - **Render** - Easy deployment platform
@@ -257,6 +282,7 @@ laudratrack/
 The frontend is ready to connect to a backend API. Update API endpoints in:
 
 1. **Environment Variables** (`.env.local`)
+
    ```env
    NEXT_PUBLIC_API_URL=http://your-backend-url
    ```
@@ -268,6 +294,7 @@ The frontend is ready to connect to a backend API. Update API endpoints in:
    ```
 
 ### Expected Backend Endpoints
+
 ```
 POST   /api/auth/register          # User registration
 POST   /api/auth/login             # User login

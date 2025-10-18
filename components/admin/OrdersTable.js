@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Edit, Calendar } from 'lucide-react';
-import Link from 'next/link';
+import { Search, Calendar } from 'lucide-react';
 
 // New EditableDate component
 const EditableDate = ({ order, onDateUpdate }) => {
@@ -113,9 +112,6 @@ const OrdersTable = ({ orders, onDateUpdate }) => {
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Total
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -152,14 +148,6 @@ const OrdersTable = ({ orders, onDateUpdate }) => {
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     ₱{(order.totalAmount || 0).toFixed(2)}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                    <Link
-                      href={`/admin/orders/${orderId}`}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      <Edit size={16} />
-                    </Link>
                   </td>
                 </tr>
               );

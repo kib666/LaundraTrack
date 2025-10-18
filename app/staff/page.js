@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import {
   Clock,
@@ -273,34 +273,107 @@ const ProfileView = ({ session }) => {
     `${staffMember.firstName || ''} ${staffMember.lastName || ''}`.trim() ||
     'Staff Member';
 
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: staffMember.firstName || '',
+    lastName: staffMember.lastName || '',
+    email: staffMember.email || '',
+    phone: staffMember.phone || '',
+  });
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const response = await fetch('/api/staff/profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.user?.token}`,
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        setIsEditing(false);
+        alert('Profile updated successfully!');
+      } else {
+        alert('Failed to update profile');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Error updating profile');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setFormData({
+      firstName: staffMember.firstName || '',
+      lastName: staffMember.lastName || '',
+      email: staffMember.email || '',
+      phone: staffMember.phone || '',
+    });
+    setIsEditing(false);
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm border p-6 max-w-2xl mx-auto">
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-600 mb-1">Full Name</label>
+          <label className="block text-sm font-medium text-gray-600 mb-1">First Name</label>
           <input
             type="text"
-            value={fullName}
-            disabled
-            className="w-full p-2 border rounded-lg bg-gray-100 text-gray-800"
+            value={formData.firstName}
+            onChange={(e) => handleChange('firstName', e.target.value)}
+            disabled={!isEditing}
+            className={`w-full p-2 border rounded-lg text-gray-800 ${
+              isEditing ? 'bg-white border-gray-300' : 'bg-gray-100'
+            }`}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-600 mb-1">Last Name</label>
+          <input
+            type="text"
+            value={formData.lastName}
+            onChange={(e) => handleChange('lastName', e.target.value)}
+            disabled={!isEditing}
+            className={`w-full p-2 border rounded-lg text-gray-800 ${
+              isEditing ? 'bg-white border-gray-300' : 'bg-gray-100'
+            }`}
           />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-600 mb-1">Email Address</label>
           <input
             type="email"
-            value={staffMember.email || 'N/A'}
-            disabled
-            className="w-full p-2 border rounded-lg bg-gray-100 text-gray-800"
+            value={formData.email}
+            onChange={(e) => handleChange('email', e.target.value)}
+            disabled={!isEditing}
+            className={`w-full p-2 border rounded-lg text-gray-800 ${
+              isEditing ? 'bg-white border-gray-300' : 'bg-gray-100'
+            }`}
           />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-600 mb-1">Phone Number</label>
           <input
             type="tel"
-            value={staffMember.phone || 'N/A'}
-            disabled
-            className="w-full p-2 border rounded-lg bg-gray-100 text-gray-800"
+            value={formData.phone}
+            onChange={(e) => handleChange('phone', e.target.value)}
+            disabled={!isEditing}
+            className={`w-full p-2 border rounded-lg text-gray-800 ${
+              isEditing ? 'bg-white border-gray-300' : 'bg-gray-100'
+            }`}
           />
         </div>
         <div>
@@ -312,13 +385,32 @@ const ProfileView = ({ session }) => {
             className="w-full p-2 border rounded-lg bg-gray-100 text-gray-800"
           />
         </div>
-        <div className="pt-4 border-t mt-6">
-          <button
-            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 disabled:bg-blue-300"
-            disabled
-          >
-            Edit Profile (Coming Soon)
-          </button>
+        <div className="pt-4 border-t mt-6 flex gap-2">
+          {!isEditing ? (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+            >
+              Edit Profile
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 disabled:bg-green-300"
+              >
+                {isSaving ? 'Saving...' : 'Save Changes'}
+              </button>
+              <button
+                onClick={handleCancel}
+                disabled={isSaving}
+                className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 disabled:bg-gray-300"
+              >
+                Cancel
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -352,31 +444,64 @@ export default function StaffPage() {
     }
   }, [status, session?.user?.role]);
 
-  const fetchOrders = async () => {
-    setLoading(true);
-    try {
-      const headers = session?.user?.token ? { Authorization: `Bearer ${session.user.token}` } : {};
-      const res = await fetch('/api/orders', { headers });
-      if (res.ok) {
-        const data = await res.json();
-        const ordersList = data.orders || data;
-        setOrders(Array.isArray(ordersList) ? ordersList : []);
-      } else {
-        setOrders([]);
+  const fetchOrders = useCallback(
+    async ({ showLoading = false } = {}) => {
+      if (showLoading) {
+        setLoading(true);
       }
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-      setOrders([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+
+      try {
+        const headers = session?.user?.token
+          ? { Authorization: `Bearer ${session.user.token}` }
+          : {};
+        const res = await fetch('/api/orders', { headers });
+        if (res.ok) {
+          const data = await res.json();
+          const ordersList = data.orders || data;
+          setOrders(Array.isArray(ordersList) ? ordersList : []);
+        } else {
+          setOrders([]);
+        }
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+        setOrders([]);
+      } finally {
+        if (showLoading) {
+          setLoading(false);
+        }
+      }
+    },
+    [session?.user?.token]
+  );
+
+  const pollerRef = useRef(null);
 
   useEffect(() => {
-    if (session?.user?.token) {
-      fetchOrders();
+    if (!session?.user?.token) {
+      return;
     }
-  }, [session?.user?.token]);
+
+    fetchOrders({ showLoading: true });
+  }, [fetchOrders, session?.user?.token]);
+
+  useEffect(() => {
+    if (!session?.user?.token) {
+      return;
+    }
+
+    const POLL_INTERVAL_MS = 15000;
+
+    pollerRef.current = setInterval(() => {
+      fetchOrders();
+    }, POLL_INTERVAL_MS);
+
+    return () => {
+      if (pollerRef.current) {
+        clearInterval(pollerRef.current);
+        pollerRef.current = null;
+      }
+    };
+  }, [fetchOrders, session?.user?.token]);
 
   const handleStatusUpdate = async (orderId, newStatus) => {
     try {
@@ -389,7 +514,7 @@ export default function StaffPage() {
         body: JSON.stringify({ status: newStatus }),
       });
       if (response.ok) {
-        fetchOrders(); // Re-fetch orders to update the UI
+        fetchOrders(); // Refresh orders after status change
       }
     } catch (error) {
       console.error('Error updating status:', error);
@@ -410,7 +535,7 @@ export default function StaffPage() {
         body: JSON.stringify({ status: 'cancelled' }),
       });
       if (response.ok) {
-        fetchOrders(); // Re-fetch orders to update the UI
+        fetchOrders(); // Refresh orders after cancellation
       } else {
         alert('Failed to cancel order');
       }

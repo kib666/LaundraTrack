@@ -22,13 +22,24 @@ export default function EditOrderForm({ order, onSubmit, onCancel }) {
 
   useEffect(() => {
     if (order) {
+      // Map database status (lowercase) to UI status (uppercase)
+      const statusMap = {
+        pending: 'PENDING',
+        confirmed: 'PENDING', // Treat confirmed as PENDING for UI
+        in_progress: 'IN_PROGRESS',
+        ready_for_pickup: 'COMPLETED',
+        picked_up: 'COMPLETED',
+        delivered: 'DELIVERED',
+        cancelled: 'CANCELLED',
+      };
+      const uiStatus = statusMap[order.status] || 'PENDING';
       setFormData({
         customerName: order.user?.name || 'Walk-in Customer',
         customerPhone: order.user?.phoneNumber || '',
         service: order.service || 'Wash & Fold',
         weight: order.weight?.toString() || '',
         deliveryAddress: order.deliveryAddress || '',
-        status: order.status || 'PENDING',
+        status: uiStatus,
         eta: formatDateForInput(order.eta),
         total: order.total?.toString() || '',
       });
@@ -42,8 +53,17 @@ export default function EditOrderForm({ order, onSubmit, onCancel }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    // Normalize status to lowercase for database
+    const statusMap = {
+      PENDING: 'pending',
+      IN_PROGRESS: 'in_progress',
+      COMPLETED: 'ready_for_pickup',
+      DELIVERED: 'delivered',
+      CANCELLED: 'cancelled',
+    };
     const submissionData = {
       ...formData,
+      status: statusMap[formData.status] || formData.status.toLowerCase(),
       weight: parseFloat(formData.weight) || 0,
       total: parseFloat(formData.total) || 0,
     };
@@ -88,16 +108,19 @@ export default function EditOrderForm({ order, onSubmit, onCancel }) {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Status (Staff Only)
-          </label>
-          <input
-            type="text"
+          <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+          <select
             name="status"
             value={formData.status}
-            className="w-full p-2 border rounded-lg text-gray-900 bg-gray-100"
-            readOnly
-          />
+            onChange={handleChange}
+            className="w-full p-2 border rounded-lg text-gray-900"
+          >
+            <option value="PENDING">Pending</option>
+            <option value="IN_PROGRESS">In Progress</option>
+            <option value="COMPLETED">Ready</option>
+            <option value="DELIVERED">Delivered</option>
+            <option value="CANCELLED">Cancelled</option>
+          </select>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>

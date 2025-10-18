@@ -146,7 +146,11 @@ const OrderDetails = ({ orders, onBack, onCancel }) => {
 
             {expandedOrderId === order.id && (
               <div className="mt-2 border border-t-0 rounded-b-lg p-4 bg-white space-y-4">
-                <StatusProgressTracker status={order.status} eta={order.eta || order.deliveryDate}>
+                <StatusProgressTracker
+                  status={order.status}
+                  eta={order.eta || order.deliveryDate}
+                  fulfillmentType={order.fulfillmentType}
+                >
                   <p className="text-sm text-blue-700">
                     Expected delivery:{' '}
                     {new Date(order.eta || order.deliveryDate).toLocaleDateString('en-US', {
@@ -159,7 +163,7 @@ const OrderDetails = ({ orders, onBack, onCancel }) => {
                 {canCancelOrder(order.status) && (
                   <div className="pt-4 border-t">
                     <button
-                      onClick={() => onCancel && onCancel(order.id)}
+                      onClick={() => onCancel && onCancel(order.id, order.status)}
                       className="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                     >
                       Cancel Order
@@ -921,7 +925,11 @@ const LoggedInDashboard = ({ user }) => {
 
                       {expandedOrderId === order.id && (
                         <div className="mt-2 border border-t-0 rounded-b-lg p-4 bg-white space-y-4">
-                          <StatusProgressTracker status={order.status} eta={order.preferredDate}>
+                          <StatusProgressTracker
+                            status={order.status}
+                            eta={order.preferredDate}
+                            fulfillmentType={order.fulfillmentType}
+                          >
                             <p className="text-sm text-blue-700">
                               Preferred date:{' '}
                               {order.preferredDate
@@ -986,8 +994,7 @@ const LoggedInDashboard = ({ user }) => {
                                   onClick={() => handleCancelOrder(order.id, order.status)}
                                   className="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                                 >
-                                  Cancel{' '}
-                                  {order.fulfillmentType === 'delivery' ? 'Delivery' : 'Pickup'}
+                                  Cancel Order
                                 </button>
                               )}
                               <p className="text-xs text-gray-500 text-center">

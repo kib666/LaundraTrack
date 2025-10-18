@@ -141,7 +141,53 @@ export async function PATCH(request, { params }) {
       }
     }
 
+    // Helper function to normalize status to uppercase for UI
+    const normalizeStatus = (status) => {
+      const statusMap = {
+        pending: 'PENDING',
+        confirmed: 'PENDING',
+        in_progress: 'IN_PROGRESS',
+        ready_for_pickup: 'COMPLETED',
+        picked_up: 'COMPLETED',
+        delivered: 'DELIVERED',
+        cancelled: 'CANCELLED',
+      };
+      return statusMap[status] || status.toUpperCase();
+    };
+
     if (auth.user.role === 'customer') {
+      // Allow customers to cancel only if order is pending or confirmed
+      if (updates.status === 'cancelled') {
+        if (order.status === 'pending' || order.status === 'confirmed') {
+          order.status = 'cancelled';
+          await order.save();
+          // Return normalized order with uppercase status
+          const normalizedOrder = {
+            ...order.toObject(),
+            status: normalizeStatus(order.status),
+          };
+          return Response.json(
+            {
+              success: true,
+              message: 'Order cancelled successfully',
+              order: normalizedOrder,
+            },
+            { status: 200 }
+          );
+        } else {
+          return Response.json(
+            { success: false, message: 'Only pending orders can be cancelled' },
+            { status: 400 }
+          );
+        }
+      } else if (updates.status) {
+        // Don't allow customers to change status to anything other than cancelled
+        return Response.json(
+          { success: false, message: 'You can only cancel pending orders' },
+          { status: 400 }
+        );
+      }
+
       // Allow customers to change fulfillment type for pending, in_progress, and ready_for_pickup orders
       // Cannot change if order is delivered or cancelled
       const allowedStatusesForUpdate = ['pending', 'in_progress', 'ready_for_pickup'];
@@ -215,16 +261,45 @@ export async function PATCH(request, { params }) {
         }
       }
     } else {
+      // For staff/admin - normalize status if provided
+      if (updates.status) {
+        // Accept both 'canceled' and 'cancelled' for compatibility
+        if (updates.status === 'canceled') {
+          updates.status = 'cancelled';
+        }
+        // Validate the status is in the enum
+        const validStatuses = [
+          'pending',
+          'confirmed',
+          'in_progress',
+          'ready_for_pickup',
+          'picked_up',
+          'delivered',
+          'cancelled',
+        ];
+        if (!validStatuses.includes(updates.status)) {
+          return Response.json(
+            { success: false, message: `Invalid status: ${updates.status}` },
+            { status: 400 }
+          );
+        }
+      }
       Object.assign(order, updates);
     }
 
     await order.save();
 
+    // Return normalized order with uppercase status for staff/admin
+    const normalizedOrder = {
+      ...order.toObject(),
+      status: normalizeStatus(order.status),
+    };
+
     return Response.json(
       {
         success: true,
         message: 'Order updated successfully',
-        order,
+        order: normalizedOrder,
       },
       { status: 200 }
     );

@@ -236,7 +236,6 @@ export default function OrderCalendarView({ orders }) {
           }}
           datesSet={(arg) => {
             console.log('datesSet called:', arg);
-            setCurrentDate(arg.start);
             setDisplayDate(arg.start);
             setCurrentRange({ start: arg.start, end: arg.end });
           }}
