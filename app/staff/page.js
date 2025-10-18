@@ -12,7 +12,6 @@ import {
   Clipboard,
   TrendingUp,
   Loader,
-  Calendar,
 } from 'lucide-react';
 import Sidebar from '@/components/staff/Sidebar';
 import StatusBadge from '@/components/common/StatusBadge';
@@ -259,71 +258,6 @@ const OrderListView = ({ orders, onStatusUpdate, onCancel }) => {
             <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
               <Clipboard size={40} className="mx-auto mb-2 text-gray-300" />
               <p>No {statusHeadings[status].toLowerCase()} orders</p>
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-};
-
-const DeliveryQueueView = ({ orders, onStatusUpdate, onCancel }) => {
-  const deliveryOrders = orders.filter((o) => (o.fulfillmentType || 'pickup') === 'delivery');
-
-  const sections = [
-    {
-      key: 'pending',
-      title: 'Pending & Confirmed',
-      orders: deliveryOrders.filter(
-        (order) => order.dbStatus === 'pending' || order.dbStatus === 'confirmed'
-      ),
-    },
-    {
-      key: 'in_progress',
-      title: 'In Progress',
-      orders: deliveryOrders.filter((order) => order.dbStatus === 'in_progress'),
-    },
-    {
-      key: 'ready',
-      title: 'Ready for Delivery',
-      orders: deliveryOrders.filter((order) => order.dbStatus === 'ready_for_pickup'),
-    },
-    {
-      key: 'out_for_delivery',
-      title: 'Out for Delivery',
-      orders: deliveryOrders.filter((order) => order.dbStatus === 'picked_up'),
-    },
-    {
-      key: 'delivered',
-      title: 'Delivered',
-      orders: deliveryOrders.filter((order) => order.dbStatus === 'delivered'),
-    },
-  ];
-
-  return (
-    <div className="space-y-8">
-      {sections.map((section) => (
-        <div key={section.key}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-800">
-              {section.title} ({section.orders.length})
-            </h2>
-          </div>
-          {section.orders.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {section.orders.map((order) => (
-                <OrderCard
-                  key={order._id}
-                  order={order}
-                  onStatusUpdate={onStatusUpdate}
-                  onCancel={onCancel}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
-              <Clipboard size={40} className="mx-auto mb-2 text-gray-300" />
-              <p>No {section.title.toLowerCase()} orders</p>
             </div>
           )}
         </div>
