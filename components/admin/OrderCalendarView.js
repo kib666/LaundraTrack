@@ -1,18 +1,9 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import {
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
-  LayoutGrid,
-  Clock,
-  Truck,
-  Package,
-} from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Clock, Truck, Package } from 'lucide-react';
 import format from 'date-fns/format';
-import addWeeks from 'date-fns/addWeeks';
 import isToday from 'date-fns/isToday';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -20,9 +11,9 @@ import interactionPlugin from '@fullcalendar/interaction';
 
 const FullCalendar = dynamic(() => import('@fullcalendar/react'), { ssr: false });
 
-const buildEvents = (orders) =>
-  orders.flatMap((order) => {
-    const pickup = order.pickupDate || order.createdAt;
+const buildEvents = (orders, filterStart, filterEnd) => {
+  return orders.flatMap((order) => {
+    const pickup = order.pickupDate;
     const delivery = order.deliveryDate || order.eta;
     const customer = order.customerId || {};
     const customerName =
@@ -30,8 +21,13 @@ const buildEvents = (orders) =>
         ? 'Walk-in Customer'
         : `${customer.firstName || ''} ${customer.lastName || ''}`.trim() || 'Walk-in Customer';
 
-    const pickupEvent = pickup
-      ? {
+    const events = [];
+
+    // Only add pickup event if it has a date and falls within the filter range
+    if (pickup) {
+      const pickupDate = new Date(pickup);
+      if (!filterStart || !filterEnd || (pickupDate >= filterStart && pickupDate < filterEnd)) {
+        events.push({
           id: `${order.id || order._id}-pickup`,
           title: `${customerName} • Pickup`,
           start: pickup,
@@ -40,11 +36,15 @@ const buildEvents = (orders) =>
             status: order.status,
             total: order.totalAmount || order.total,
           },
-        }
-      : null;
+        });
+      }
+    }
 
-    const deliveryEvent = delivery
-      ? {
+    // Only add delivery event if it has a date and falls within the filter range
+    if (delivery) {
+      const deliveryDate = new Date(delivery);
+      if (!filterStart || !filterEnd || (deliveryDate >= filterStart && deliveryDate < filterEnd)) {
+        events.push({
           id: `${order.id || order._id}-delivery`,
           title: `${customerName} • Delivery`,
           start: delivery,
@@ -53,11 +53,13 @@ const buildEvents = (orders) =>
             status: order.status,
             total: order.totalAmount || order.total,
           },
-        }
-      : null;
+        });
+      }
+    }
 
-    return [pickupEvent, deliveryEvent].filter(Boolean);
+    return events;
   });
+};
 
 const CalendarSummary = ({ orders, currentRange }) => {
   const summary = useMemo(() => {
@@ -129,36 +131,25 @@ const CalendarSummary = ({ orders, currentRange }) => {
 
 export default function OrderCalendarView({ orders }) {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState('dayGridMonth');
-  const [calendarRef, setCalendarRef] = useState(null);
+  const calendarRef = useRef(null);
   const [currentRange, setCurrentRange] = useState(null);
+  const [displayDate, setDisplayDate] = useState(new Date());
 
-  const events = useMemo(() => buildEvents(orders), [orders]);
-
-  const handleDateChange = (offset) => {
-    if (view === 'dayGridMonth') {
-      setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + offset, 1));
-    } else {
-      setCurrentDate((prev) => addWeeks(prev, offset));
-    }
-  };
-
-  const handleViewChange = (newView) => {
-    setView(newView);
-    if (calendarRef) {
-      calendarRef.getApi().changeView(newView);
-    }
-  };
+  const events = useMemo(() => {
+    const filterStart = currentRange?.start ? new Date(currentRange.start) : null;
+    const filterEnd = currentRange?.end ? new Date(currentRange.end) : null;
+    return buildEvents(orders, filterStart, filterEnd);
+  }, [orders, currentRange]);
 
   const handleDateClick = (direction) => {
-    if (!calendarRef) return;
-    const api = calendarRef.getApi();
+    if (!calendarRef.current || !calendarRef.current.getApi) {
+      return;
+    }
+    const api = calendarRef.current.getApi();
     if (direction === 'prev') {
       api.prev();
     } else if (direction === 'next') {
       api.next();
-    } else {
-      api.today();
     }
     updateRange(api);
   };
@@ -166,71 +157,42 @@ export default function OrderCalendarView({ orders }) {
   const updateRange = (api) => {
     const viewInstance = api.view;
     setCurrentRange({ start: viewInstance.currentStart, end: viewInstance.currentEnd });
+    setDisplayDate(api.getDate());
   };
 
-  const handleCalendarReady = (calendar) => {
-    setCalendarRef(calendar);
-    updateRange(calendar.getApi());
-  };
+  // Set up initial calendar range
+  useEffect(() => {
+    if (calendarRef.current && calendarRef.current.getApi) {
+      const api = calendarRef.current.getApi();
+      updateRange(api);
+    }
+  }, []);
 
-  const headerLabel = format(
-    currentDate,
-    view === 'dayGridMonth' ? 'MMMM yyyy' : "MMMM d'–'d, yyyy"
-  );
+  const headerLabel = useMemo(() => {
+    return format(displayDate, 'MMMM yyyy');
+  }, [displayDate]);
 
   return (
     <div className="bg-white rounded-lg shadow-sm border p-6 space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={() => handleDateClick('prev')}
-            className="p-2 rounded-full border border-gray-200 hover:bg-gray-100"
-            aria-label="Previous period"
-          >
-            <ChevronLeft size={18} />
-          </button>
-          <div className="text-center">
-            <p className="text-xl font-semibold text-gray-800">{headerLabel}</p>
-            <p className="text-sm text-gray-500">{events.length} scheduled events</p>
-          </div>
-          <button
-            onClick={() => handleDateClick('next')}
-            className="p-2 rounded-full border border-gray-200 hover:bg-gray-100"
-            aria-label="Next period"
-          >
-            <ChevronRight size={18} />
-          </button>
+      <div className="flex items-center justify-center gap-4">
+        <button
+          onClick={() => handleDateClick('prev')}
+          className="p-2 rounded-full border border-gray-200 hover:bg-gray-100 transition"
+          aria-label="Previous month"
+        >
+          <ChevronLeft size={20} />
+        </button>
+        <div className="text-center min-w-48">
+          <p className="text-2xl font-semibold text-gray-800">{headerLabel}</p>
+          <p className="text-sm text-gray-500 mt-1">{events.length} scheduled events</p>
         </div>
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => handleDateClick('today')}
-            className="px-3 py-2 text-sm font-medium border rounded-lg hover:bg-gray-100"
-          >
-            Today
-          </button>
-          <button
-            onClick={() => handleViewChange('timeGridWeek')}
-            className={`px-4 py-2 text-sm font-medium border rounded-lg flex items-center space-x-2 ${
-              view === 'timeGridWeek'
-                ? 'bg-blue-50 text-blue-600 border-blue-200'
-                : 'hover:bg-gray-100'
-            }`}
-          >
-            <Clock size={16} />
-            <span>Week</span>
-          </button>
-          <button
-            onClick={() => handleViewChange('dayGridMonth')}
-            className={`px-4 py-2 text-sm font-medium border rounded-lg flex items-center space-x-2 ${
-              view === 'dayGridMonth'
-                ? 'bg-blue-50 text-blue-600 border-blue-200'
-                : 'hover:bg-gray-100'
-            }`}
-          >
-            <LayoutGrid size={16} />
-            <span>Month</span>
-          </button>
-        </div>
+        <button
+          onClick={() => handleDateClick('next')}
+          className="p-2 rounded-full border border-gray-200 hover:bg-gray-100 transition"
+          aria-label="Next month"
+        >
+          <ChevronRight size={20} />
+        </button>
       </div>
 
       <CalendarSummary orders={orders} currentRange={currentRange} />
@@ -238,11 +200,17 @@ export default function OrderCalendarView({ orders }) {
       <div className="border rounded-lg overflow-hidden">
         <FullCalendar
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-          ref={handleCalendarReady}
+          ref={calendarRef}
           initialView="dayGridMonth"
+          initialDate={new Date()}
           headerToolbar={false}
           events={events}
           displayEventEnd={false}
+          dayCellContent={(arg) => (
+            <div className="flex justify-end">
+              <span className="text-xs font-semibold text-gray-700">{arg.date.getDate()}</span>
+            </div>
+          )}
           eventTimeFormat={{ hour: 'numeric', minute: '2-digit' }}
           eventClassNames={(arg) =>
             arg.event.extendedProps.type === 'delivery'
@@ -267,7 +235,12 @@ export default function OrderCalendarView({ orders }) {
               </div>
             );
           }}
-          datesSet={(arg) => setCurrentDate(arg.start)}
+          datesSet={(arg) => {
+            console.log('datesSet called:', arg);
+            setCurrentDate(arg.start);
+            setDisplayDate(arg.start);
+            setCurrentRange({ start: arg.start, end: arg.end });
+          }}
           eventDidMount={(info) => {
             if (info.view) {
               const api = info.view.calendar;

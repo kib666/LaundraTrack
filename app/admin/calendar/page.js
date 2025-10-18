@@ -1,34 +1,45 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
 import { Loader } from 'lucide-react';
 import OrderCalendarView from '@/components/admin/OrderCalendarView';
 
 export default function CalendarPage() {
+  const { data: session } = useSession();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/orders');
-        if (response.ok) {
-          const data = await response.json();
-          setOrders(Array.isArray(data) ? data : []);
-        } else {
-          console.error('Failed to fetch orders');
-          setOrders([]);
-        }
-      } catch (error) {
-        console.error('Error fetching orders:', error);
+  const fetchOrders = useCallback(async () => {
+    try {
+      setLoading(true);
+      const headers = session?.user?.token ? { Authorization: `Bearer ${session.user.token}` } : {};
+      const response = await fetch('/api/orders?limit=200', { headers });
+
+      if (!response.ok) {
+        console.error('Failed to fetch orders:', await response.text());
         setOrders([]);
-      } finally {
-        setLoading(false);
+        return;
       }
-    };
+
+      const data = await response.json();
+      const ordersList = data.orders || data;
+      setOrders(Array.isArray(ordersList) ? ordersList : []);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      setOrders([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [session?.user?.token]);
+
+  useEffect(() => {
+    if (!session?.user?.token) {
+      return;
+    }
+
     fetchOrders();
-  }, []);
+  }, [fetchOrders, session?.user?.token]);
 
   if (loading) {
     return (
@@ -43,4 +54,4 @@ export default function CalendarPage() {
       <OrderCalendarView orders={orders} />
     </div>
   );
-} 
+}

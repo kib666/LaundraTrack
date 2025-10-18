@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
 import {
   Package,
   Plus,
@@ -379,15 +380,17 @@ const computeDashboardMetrics = (orders) => {
 };
 
 export default function AdminDashboard() {
+  const { data: session } = useSession();
   const [orders, setOrders] = useState([]);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [orderSuccess, setOrderSuccess] = useState(false);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/orders?limit=100');
+      const headers = session?.user?.token ? { Authorization: `Bearer ${session.user.token}` } : {};
+      const response = await fetch('/api/orders?limit=100', { headers });
 
       if (!response.ok) {
         console.error('Failed to fetch orders:', await response.text());
@@ -404,22 +407,28 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [session?.user?.token]);
 
   useEffect(() => {
-    fetchOrders();
+    if (!session?.user?.token) {
+      return;
+    }
 
-    const interval = setInterval(fetchOrders, 5000);
-    return () => clearInterval(interval);
-  }, []);
+    fetchOrders();
+  }, [fetchOrders, session?.user?.token]);
 
   const handleCreateOrder = async (formData) => {
     try {
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (session?.user?.token) {
+        headers.Authorization = `Bearer ${session.user.token}`;
+      }
+
       const response = await fetch('/api/orders', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(formData),
       });
 

@@ -14,13 +14,15 @@ export async function GET(request) {
       return Response.json({ success: false, message: auth.error }, { status: auth.status });
     }
 
-    // Check approval
-    const approval = requireApproval(auth.user);
-    if (approval.error) {
-      return Response.json(
-        { success: false, message: approval.error },
-        { status: approval.status }
-      );
+    // Check approval only for non-customer users (staff/admin)
+    if (auth.user.role !== 'customer') {
+      const approval = requireApproval(auth.user);
+      if (approval.error) {
+        return Response.json(
+          { success: false, message: approval.error },
+          { status: approval.status }
+        );
+      }
     }
 
     const { searchParams } = new URL(request.url);
@@ -75,7 +77,9 @@ export async function GET(request) {
       deliveryAddress: order.deliveryAddress,
       deliveryDate: order.deliveryDate,
       pickupDate: order.pickupDate,
+      preferredDate: order.preferredDate,
       serviceType: order.serviceType,
+      fulfillmentType: order.fulfillmentType || 'pickup',
       paymentStatus: order.paymentStatus,
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
@@ -114,13 +118,15 @@ export async function POST(request) {
       return Response.json({ success: false, message: auth.error }, { status: auth.status });
     }
 
-    // Check approval
-    const approval = requireApproval(auth.user);
-    if (approval.error) {
-      return Response.json(
-        { success: false, message: approval.error },
-        { status: approval.status }
-      );
+    // Check approval only for non-customer users (staff/admin)
+    if (auth.user.role !== 'customer') {
+      const approval = requireApproval(auth.user);
+      if (approval.error) {
+        return Response.json(
+          { success: false, message: approval.error },
+          { status: approval.status }
+        );
+      }
     }
 
     const {
@@ -129,21 +135,45 @@ export async function POST(request) {
       description,
       pickupAddress,
       deliveryAddress,
-      pickupDate,
-      deliveryDate,
+      preferredDate,
+      fulfillmentType = 'pickup',
+      weight,
       serviceType,
     } = await request.json();
 
-    // Validation
-    if (!items || !totalAmount || !pickupAddress || !deliveryAddress) {
+    if (
+      !items ||
+      !items.length ||
+      !totalAmount ||
+      !serviceType ||
+      !preferredDate ||
+      typeof weight === 'undefined'
+    ) {
       return Response.json({ success: false, message: 'Missing required fields' }, { status: 400 });
     }
 
-    if (totalAmount <= 0) {
-      return Response.json({ success: false, message: 'Invalid total amount' }, { status: 400 });
+    if (totalAmount <= 0 || Number.isNaN(Number(weight)) || Number(weight) <= 0) {
+      return Response.json(
+        { success: false, message: 'Invalid weight or total amount' },
+        { status: 400 }
+      );
     }
 
-    // Create order
+    if (fulfillmentType === 'delivery' && !deliveryAddress) {
+      return Response.json(
+        { success: false, message: 'Delivery address is required for delivery orders' },
+        { status: 400 }
+      );
+    }
+
+    const normalizedPreferredDate = preferredDate ? new Date(preferredDate) : null;
+    if (!normalizedPreferredDate || Number.isNaN(normalizedPreferredDate.getTime())) {
+      return Response.json(
+        { success: false, message: 'Preferred date is invalid' },
+        { status: 400 }
+      );
+    }
+
     const trackingNumber = `ORD-${Date.now()}-${uuidv4().slice(0, 8).toUpperCase()}`;
     const order = new Order({
       trackingNumber,
@@ -151,10 +181,16 @@ export async function POST(request) {
       items,
       totalAmount,
       description,
-      pickupAddress,
-      deliveryAddress,
-      pickupDate: pickupDate ? new Date(pickupDate) : null,
-      deliveryDate: deliveryDate ? new Date(deliveryDate) : null,
+      pickupAddress:
+        fulfillmentType === 'delivery'
+          ? pickupAddress?.trim() || null
+          : pickupAddress?.trim() || 'Customer Drop-off',
+      deliveryAddress: fulfillmentType === 'delivery' ? deliveryAddress?.trim() : null,
+      preferredDate: normalizedPreferredDate,
+      pickupDate: fulfillmentType === 'pickup' ? normalizedPreferredDate : null,
+      deliveryDate: fulfillmentType === 'delivery' ? normalizedPreferredDate : null,
+      fulfillmentType,
+      weight,
       serviceType: serviceType || 'wash',
       status: 'pending',
       paymentStatus: 'pending',

@@ -140,11 +140,11 @@ export default function HomePage() {
         <section className="bg-white">
           <div className="max-w-7xl mx-auto py-24 px-4 sm:px-6 lg:px-8 text-center bg-gradient-to-b from-blue-50 to-white">
             <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 leading-tight">
-              M1G Laundry
+              LaundraTrack
               <span className="block text-blue-600 mt-2">Management System</span>
             </h1>
             <p className="mt-6 text-lg text-gray-600 max-w-2xl mx-auto">
-              Project for the Course of Parallel And Distributed Computing
+              Final Project for Technopreneurship
             </p>
 
             <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -260,7 +260,7 @@ export default function HomePage() {
               </div>
               <div className="flex items-center space-x-3 text-gray-800">
                 <Mail />
-                <span>mamdavid@tip.edu.ph</span>
+                <span>mikplacencia@tip.edu.ph</span>
               </div>
               <div className="flex items-center space-x-3 text-gray-800">
                 <MapPin />

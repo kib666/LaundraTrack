@@ -13,9 +13,11 @@ import {
   TrendingUp,
   Loader,
   AlertTriangle,
+  Calendar,
 } from 'lucide-react';
 import Sidebar from '@/components/staff/Sidebar';
 import StatusBadge from '@/components/common/StatusBadge';
+import OrderCalendarView from '@/components/admin/OrderCalendarView';
 
 const StaffTopBar = ({ title, onMenuToggle, staffName }) => {
   return (
@@ -41,36 +43,55 @@ const StaffTopBar = ({ title, onMenuToggle, staffName }) => {
 
 // Staff Stats Component
 const StaffStats = ({ orders }) => {
+  const pendingCount = orders.filter(
+    (o) => o.dbStatus === 'pending' || o.dbStatus === 'confirmed'
+  ).length;
+  const inProgressCount = orders.filter((o) => o.dbStatus === 'in_progress').length;
+  const readyForPickupCount = orders.filter(
+    (o) => o.dbStatus === 'ready_for_pickup' && (o.fulfillmentType || 'pickup') !== 'delivery'
+  ).length;
+  const readyForDeliveryCount = orders.filter(
+    (o) =>
+      (o.dbStatus === 'ready_for_pickup' || o.dbStatus === 'picked_up') &&
+      (o.fulfillmentType || 'pickup') === 'delivery'
+  ).length;
+  const revenueTotal = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+
   const stats = [
     {
       title: 'Pending Tasks',
-      value: orders.filter((o) => o.dbStatus === 'pending' || o.dbStatus === 'confirmed').length,
+      value: pendingCount,
       icon: Clock,
       color: 'bg-yellow-500',
     },
     {
       title: 'In Progress',
-      value: orders.filter((o) => o.dbStatus === 'in_progress').length,
+      value: inProgressCount,
       icon: Package,
       color: 'bg-blue-500',
     },
     {
+      title: 'Ready for Pickup',
+      value: readyForPickupCount,
+      icon: Clipboard,
+      color: 'bg-emerald-500',
+    },
+    {
       title: 'Ready for Delivery',
-      value: orders.filter((o) => o.dbStatus === 'ready_for_pickup' || o.dbStatus === 'picked_up')
-        .length,
+      value: readyForDeliveryCount,
       icon: Truck,
       color: 'bg-green-500',
     },
     {
       title: "Today's Revenue",
-      value: `₱${orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0).toFixed(2)}`,
+      value: `₱${revenueTotal.toFixed(2)}`,
       icon: TrendingUp,
       color: 'bg-purple-500',
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
       {stats.map((stat, index) => (
         <div
           key={index}
@@ -91,14 +112,11 @@ const StaffStats = ({ orders }) => {
 
 // Order Card Component
 const OrderCard = ({ order, onStatusUpdate, onCancel }) => {
-  const getNextAction = (dbStatus) => {
+  const getNextAction = (dbStatus, fulfillmentType) => {
+    const isDelivery = (fulfillmentType || 'pickup') === 'delivery';
+
     switch (dbStatus) {
       case 'pending':
-        return {
-          text: 'Start Wash',
-          color: 'bg-blue-500 hover:bg-blue-600',
-          nextStatus: 'in_progress',
-        };
       case 'confirmed':
         return {
           text: 'Start Wash',
@@ -107,28 +125,30 @@ const OrderCard = ({ order, onStatusUpdate, onCancel }) => {
         };
       case 'in_progress':
         return {
-          text: 'Mark Ready',
+          text: isDelivery ? 'Mark Ready for Delivery' : 'Mark Ready for Pickup',
           color: 'bg-green-500 hover:bg-green-600',
           nextStatus: 'ready_for_pickup',
         };
       case 'ready_for_pickup':
         return {
-          text: 'Mark Picked Up',
+          text: isDelivery ? 'Mark Out for Delivery' : 'Confirm Pickup',
           color: 'bg-purple-500 hover:bg-purple-600',
-          nextStatus: 'picked_up',
+          nextStatus: isDelivery ? 'picked_up' : 'delivered',
         };
       case 'picked_up':
-        return {
-          text: 'Mark Delivered',
-          color: 'bg-indigo-500 hover:bg-indigo-600',
-          nextStatus: 'delivered',
-        };
+        return isDelivery
+          ? {
+              text: 'Confirm Delivered',
+              color: 'bg-indigo-500 hover:bg-indigo-600',
+              nextStatus: 'delivered',
+            }
+          : null;
       default:
         return null;
     }
   };
 
-  const nextAction = getNextAction(order.dbStatus);
+  const nextAction = getNextAction(order.dbStatus, order.fulfillmentType);
   const customerName =
     order.customerId?.firstName && order.customerId?.lastName
       ? `${order.customerId.firstName} ${order.customerId.lastName}`
@@ -136,6 +156,8 @@ const OrderCard = ({ order, onStatusUpdate, onCancel }) => {
   const customerPhone = order.customerId?.phone || 'N/A';
   const itemsCount = order.items?.length || 0;
   const canCancel = order.dbStatus === 'pending' || order.dbStatus === 'confirmed';
+
+  const isDelivery = (order.fulfillmentType || 'pickup') === 'delivery';
 
   return (
     <div className="bg-white rounded-lg shadow-sm border p-4 hover:shadow-md transition-shadow flex flex-col justify-between">
@@ -158,6 +180,12 @@ const OrderCard = ({ order, onStatusUpdate, onCancel }) => {
           <p>
             <span className="font-medium">Service:</span> {order.serviceType || 'wash'}
           </p>
+          {isDelivery && order.deliveryAddress && (
+            <p>
+              <span className="font-medium">Address:</span>{' '}
+              <span className="text-xs">{order.deliveryAddress}</span>
+            </p>
+          )}
           <p className="text-lg font-bold">₱{(order.totalAmount || 0).toFixed(2)}</p>
         </div>
       </div>
@@ -191,7 +219,13 @@ const OrderListView = ({ orders, onStatusUpdate, onCancel }) => {
     ),
     in_progress: orders.filter((order) => order.dbStatus === 'in_progress'),
     ready_for_pickup: orders.filter(
-      (order) => order.dbStatus === 'ready_for_pickup' || order.dbStatus === 'picked_up'
+      (order) =>
+        order.dbStatus === 'ready_for_pickup' && (order.fulfillmentType || 'pickup') !== 'delivery'
+    ),
+    ready_for_delivery: orders.filter(
+      (order) =>
+        (order.dbStatus === 'ready_for_pickup' || order.dbStatus === 'picked_up') &&
+        (order.fulfillmentType || 'pickup') === 'delivery'
     ),
     delivered: orders.filter((order) => order.dbStatus === 'delivered'),
   };
@@ -199,7 +233,8 @@ const OrderListView = ({ orders, onStatusUpdate, onCancel }) => {
   const statusHeadings = {
     pending: 'Pending Orders',
     in_progress: 'In Progress',
-    ready_for_pickup: 'Ready for Delivery / Pickup',
+    ready_for_pickup: 'Ready for Pickup',
+    ready_for_delivery: 'Ready for Delivery',
     delivered: 'Completed & Delivered',
   };
 
@@ -233,90 +268,67 @@ const OrderListView = ({ orders, onStatusUpdate, onCancel }) => {
   );
 };
 
-const DeliveriesView = ({ orders, onStatusUpdate }) => {
-  const deliveryOrders = orders.filter(
-    (o) =>
-      o.dbStatus === 'ready_for_pickup' || o.dbStatus === 'picked_up' || o.dbStatus === 'delivered'
-  );
+const DeliveryQueueView = ({ orders, onStatusUpdate, onCancel }) => {
+  const deliveryOrders = orders.filter((o) => (o.fulfillmentType || 'pickup') === 'delivery');
+
+  const sections = [
+    {
+      key: 'pending',
+      title: 'Pending & Confirmed',
+      orders: deliveryOrders.filter(
+        (order) => order.dbStatus === 'pending' || order.dbStatus === 'confirmed'
+      ),
+    },
+    {
+      key: 'in_progress',
+      title: 'In Progress',
+      orders: deliveryOrders.filter((order) => order.dbStatus === 'in_progress'),
+    },
+    {
+      key: 'ready',
+      title: 'Ready for Delivery',
+      orders: deliveryOrders.filter((order) => order.dbStatus === 'ready_for_pickup'),
+    },
+    {
+      key: 'out_for_delivery',
+      title: 'Out for Delivery',
+      orders: deliveryOrders.filter((order) => order.dbStatus === 'picked_up'),
+    },
+    {
+      key: 'delivered',
+      title: 'Delivered',
+      orders: deliveryOrders.filter((order) => order.dbStatus === 'delivered'),
+    },
+  ];
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border p-6">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="bg-gray-50 border-b">
-              <th className="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Customer
-              </th>
-              <th className="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Address
-              </th>
-              <th className="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Delivery Date
-              </th>
-              <th className="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Action
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {deliveryOrders.length > 0 ? (
-              deliveryOrders.map((order) => {
-                const customerName =
-                  order.customerId?.firstName && order.customerId?.lastName
-                    ? `${order.customerId.firstName} ${order.customerId.lastName}`
-                    : 'N/A';
-                const customerPhone = order.customerId?.phone || 'N/A';
-
-                return (
-                  <tr key={order._id} className="border-b last:border-0 hover:bg-gray-50">
-                    <td className="p-3">
-                      <p className="font-medium text-gray-900">{customerName}</p>
-                      <p className="text-xs text-gray-500">{customerPhone}</p>
-                    </td>
-                    <td className="p-3 text-sm text-gray-700">{order.deliveryAddress}</td>
-                    <td className="p-3 text-sm text-gray-700">
-                      {order.deliveryDate
-                        ? new Date(order.deliveryDate).toLocaleDateString()
-                        : 'N/A'}
-                    </td>
-                    <td className="p-3">
-                      <StatusBadge status={order.status} />
-                    </td>
-                    <td className="p-3">
-                      {order.dbStatus === 'picked_up' && (
-                        <button
-                          onClick={() => onStatusUpdate(order._id, 'delivered')}
-                          className="bg-purple-500 text-white px-3 py-1 rounded-lg text-xs font-medium hover:bg-purple-600"
-                        >
-                          Mark Delivered
-                        </button>
-                      )}
-                      {order.dbStatus === 'ready_for_pickup' && (
-                        <button
-                          onClick={() => onStatusUpdate(order._id, 'picked_up')}
-                          className="bg-blue-500 text-white px-3 py-1 rounded-lg text-xs font-medium hover:bg-blue-600"
-                        >
-                          Mark Picked Up
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })
-            ) : (
-              <tr>
-                <td colSpan="5" className="text-center py-12 text-gray-500">
-                  No orders ready for delivery.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+    <div className="space-y-8">
+      {sections.map((section) => (
+        <div key={section.key}>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-800">
+              {section.title} ({section.orders.length})
+            </h2>
+          </div>
+          {section.orders.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {section.orders.map((order) => (
+                <OrderCard
+                  key={order._id}
+                  order={order}
+                  onStatusUpdate={onStatusUpdate}
+                  onCancel={onCancel}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
+              <Clipboard size={40} className="mx-auto mb-2 text-gray-300" />
+              <p>No {section.title.toLowerCase()} orders</p>
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 };
@@ -477,12 +489,12 @@ export default function StaffPage() {
 
   const pageTitle = {
     tasks: 'My Tasks',
-    deliveries: 'Deliveries',
+    calendar: 'Calendar',
     profile: 'My Profile',
   }[activeTab];
 
   const renderContent = () => {
-    if (loading) {
+    if (loading && activeTab !== 'calendar' && activeTab !== 'profile') {
       return (
         <div className="flex justify-center items-center h-full">
           <Loader className="animate-spin" size={48} />
@@ -502,8 +514,8 @@ export default function StaffPage() {
             />
           </>
         );
-      case 'deliveries':
-        return <DeliveriesView orders={orders} onStatusUpdate={handleStatusUpdate} />;
+      case 'calendar':
+        return <OrderCalendarView orders={orders} />;
       case 'profile':
         return <ProfileView session={session} />;
       default:

@@ -21,6 +21,15 @@ import {
 import StatusProgressTracker from '@/components/customer/StatusProgressTracker';
 import StatusBadge from '@/components/common/StatusBadge';
 
+const broadcastOrderUpdate = () => {
+  if (typeof window === 'undefined' || !('BroadcastChannel' in window)) {
+    return;
+  }
+  const channel = new BroadcastChannel('orders-sync');
+  channel.postMessage({ type: 'ORDERS_UPDATED', source: 'customer' });
+  channel.close();
+};
+
 const OrderLookupForm = ({ onLookup, isLoading }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchType] = useState('phone');
@@ -378,9 +387,9 @@ const NewOrderForm = ({ userId, onOrderCreated }) => {
   const { data: session } = useSession();
   const [weight, setWeight] = useState('');
   const [service, setService] = useState('Wash & Fold');
-  const [pickupAddress, setPickupAddress] = useState('');
   const [deliveryAddress, setDeliveryAddress] = useState('');
-  const [eta, setEta] = useState('');
+  const [fulfillmentType, setFulfillmentType] = useState('pickup');
+  const [preferredDate, setPreferredDate] = useState('');
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -421,9 +430,20 @@ const NewOrderForm = ({ userId, onOrderCreated }) => {
     setError('');
 
     try {
-      // Get JWT token from session
       if (!session?.user?.token) {
         throw new Error('Authentication token not found. Please log in again.');
+      }
+
+      if (!weight || Number(weight) <= 0) {
+        throw new Error('Please enter a valid weight.');
+      }
+
+      if (!preferredDate) {
+        throw new Error('Preferred date is required.');
+      }
+
+      if (fulfillmentType === 'delivery' && !deliveryAddress.trim()) {
+        throw new Error('Delivery address is required for delivery orders.');
       }
 
       const selectedService = serviceOptions.find((s) => s.name === service);
@@ -444,11 +464,12 @@ const NewOrderForm = ({ userId, onOrderCreated }) => {
             },
           ],
           totalAmount,
-          pickupAddress: pickupAddress || 'To be arranged',
-          deliveryAddress,
+          deliveryAddress: fulfillmentType === 'delivery' ? deliveryAddress.trim() : null,
           description: `${service} service for ${weight}kg`,
-          deliveryDate: eta ? new Date(eta) : null,
+          preferredDate,
           serviceType: selectedService.type,
+          fulfillmentType,
+          weight: parseFloat(weight),
         }),
       });
 
@@ -460,10 +481,11 @@ const NewOrderForm = ({ userId, onOrderCreated }) => {
       setWeight('');
       setNotes('');
       setService('Wash & Fold');
-      setPickupAddress('');
       setDeliveryAddress('');
-      setEta('');
+      setPreferredDate('');
+      setFulfillmentType('pickup');
       onOrderCreated();
+      broadcastOrderUpdate();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -510,37 +532,38 @@ const NewOrderForm = ({ userId, onOrderCreated }) => {
             <p className="text-xl font-bold text-blue-600">₱{estimatedPrice.toFixed(2)}</p>
           </div>
         )}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Pickup Address (Optional)
-          </label>
+        <div className="flex items-center gap-2">
           <input
-            type="text"
-            placeholder="Where we'll pick up your laundry"
-            value={pickupAddress}
-            onChange={(e) => setPickupAddress(e.target.value)}
-            className="w-full p-3 border rounded-lg text-gray-900"
+            type="checkbox"
+            id="fulfillment-toggle"
+            checked={fulfillmentType === 'delivery'}
+            onChange={(e) => setFulfillmentType(e.target.checked ? 'delivery' : 'pickup')}
+            className="h-4 w-4 text-blue-600 border-gray-300 rounded"
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Address</label>
-          <input
-            type="text"
-            placeholder="Your full address"
-            value={deliveryAddress}
-            onChange={(e) => setDeliveryAddress(e.target.value)}
-            required
-            className="w-full p-3 border rounded-lg text-gray-900"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Preferred Delivery Date
+          <label htmlFor="fulfillment-toggle" className="text-sm font-medium text-gray-700">
+            Will be Delivered
           </label>
+        </div>
+
+        {fulfillmentType === 'delivery' && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Address</label>
+            <input
+              type="text"
+              placeholder="Your full address"
+              value={deliveryAddress}
+              onChange={(e) => setDeliveryAddress(e.target.value)}
+              required={fulfillmentType === 'delivery'}
+              className="w-full p-3 border rounded-lg text-gray-900"
+            />
+          </div>
+        )}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Date</label>
           <input
             type="date"
-            value={eta}
-            onChange={(e) => setEta(e.target.value)}
+            value={preferredDate}
+            onChange={(e) => setPreferredDate(e.target.value)}
             required
             className="w-full p-3 border rounded-lg text-gray-900"
           />
@@ -569,21 +592,58 @@ const NewOrderForm = ({ userId, onOrderCreated }) => {
 };
 
 const LoggedInDashboard = ({ user }) => {
+  const { data: session } = useSession();
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const [deliveryUpdates, setDeliveryUpdates] = useState({});
+  const [mutatingOrderId, setMutatingOrderId] = useState(null);
+  const [deliveryModal, setDeliveryModal] = useState({ isOpen: false, orderId: null, address: '' });
 
   const fetchOrders = async () => {
-    const res = await fetch(`/api/orders/user/${user.id}`);
-    if (res.ok) {
-      const data = await res.json();
-      setOrders(data);
+    if (!session?.user?.token) {
+      setOrders([]);
+      setDeliveryUpdates({});
+      setIsLoading(false);
+      return;
     }
-    setIsLoading(false);
+
+    try {
+      const headers = { Authorization: `Bearer ${session.user.token}` };
+      const res = await fetch(`/api/orders`, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        const ordersList = data.orders || data;
+        const filteredOrders = Array.isArray(ordersList)
+          ? ordersList.filter((order) => {
+              const customer = order.customerId || order.user || {};
+              const customerId =
+                typeof customer === 'string'
+                  ? customer
+                  : customer?._id || customer?.id || customer?.userId;
+              return customerId && customerId.toString() === user.id;
+            })
+          : [];
+        setOrders(filteredOrders);
+        const nextDeliveryUpdates = {};
+        filteredOrders.forEach((order) => {
+          nextDeliveryUpdates[order.id] = order.deliveryAddress || '';
+        });
+        setDeliveryUpdates(nextDeliveryUpdates);
+      } else {
+        setOrders([]);
+        setDeliveryUpdates({});
+      }
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      setOrders([]);
+      setDeliveryUpdates({});
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleCancelOrder = async (orderId, orderStatus) => {
-    // Check if order can be cancelled (only PENDING status)
     if (orderStatus !== 'PENDING') {
       alert('This order cannot be cancelled. Only pending orders can be cancelled.');
       return;
@@ -592,32 +652,181 @@ const LoggedInDashboard = ({ user }) => {
     if (!window.confirm('Are you sure you want to cancel this order?')) {
       return;
     }
+    if (!session?.user?.token) {
+      alert('Authentication token missing. Please log in again.');
+      return;
+    }
+
     try {
+      setMutatingOrderId(orderId);
       const response = await fetch(`/api/orders/${orderId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.user.token}`,
         },
         body: JSON.stringify({ status: 'cancelled' }),
       });
       if (response.ok) {
         alert('Order cancelled successfully');
-        fetchOrders(); // Refresh the orders list
+        broadcastOrderUpdate();
+        fetchOrders();
       } else {
-        alert('Failed to cancel order');
+        const data = await response.json();
+        alert(data?.message || 'Failed to cancel order');
       }
     } catch (error) {
       console.error('Error canceling order:', error);
       alert('Error canceling order');
+    } finally {
+      setMutatingOrderId(null);
+    }
+  };
+
+  const handleToggleFulfillment = async (order, fulfillmentType) => {
+    if (!session?.user?.token) {
+      alert('Authentication token missing. Please log in again.');
+      return;
+    }
+
+    // If switching to delivery, open modal to get address
+    if (fulfillmentType === 'delivery') {
+      setDeliveryModal({
+        isOpen: true,
+        orderId: order.id,
+        address: order.deliveryAddress || '',
+      });
+      return;
+    }
+
+    // If switching to pickup
+    try {
+      setMutatingOrderId(order.id);
+      const response = await fetch(`/api/orders/${order.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.user.token}`,
+        },
+        body: JSON.stringify({
+          fulfillmentType: 'pickup',
+          pickupAddress: 'Customer Drop-off',
+        }),
+      });
+      if (response.ok) {
+        alert('Order updated to pickup');
+        broadcastOrderUpdate();
+        fetchOrders();
+      } else {
+        const data = await response.json();
+        alert(data?.message || 'Failed to update order');
+      }
+    } catch (error) {
+      console.error('Error toggling fulfillment:', error);
+      alert('Error updating order');
+    } finally {
+      setMutatingOrderId(null);
+    }
+  };
+
+  const handleDeliveryAddressSubmit = async () => {
+    if (!session?.user?.token) {
+      alert('Authentication token missing. Please log in again.');
+      return;
+    }
+
+    if (!deliveryModal.address.trim()) {
+      alert('Please enter a delivery address');
+      return;
+    }
+
+    try {
+      setMutatingOrderId(deliveryModal.orderId);
+      const response = await fetch(`/api/orders/${deliveryModal.orderId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.user.token}`,
+        },
+        body: JSON.stringify({
+          fulfillmentType: 'delivery',
+          deliveryAddress: deliveryModal.address.trim(),
+        }),
+      });
+      if (response.ok) {
+        alert('Order updated to delivery with address provided');
+        setDeliveryModal({ isOpen: false, orderId: null, address: '' });
+        broadcastOrderUpdate();
+        fetchOrders();
+      } else {
+        const data = await response.json();
+        alert(data?.message || 'Failed to update order');
+      }
+    } catch (error) {
+      console.error('Error updating delivery address:', error);
+      alert('Error updating order');
+    } finally {
+      setMutatingOrderId(null);
+    }
+  };
+
+  const handleDeliveryAddressUpdate = async (orderId, address, orderStatus) => {
+    if (!session?.user?.token) {
+      alert('Authentication token missing. Please log in again.');
+      return;
+    }
+
+    if (!address.trim()) {
+      return;
+    }
+
+    try {
+      setMutatingOrderId(orderId);
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.user.token}`,
+        },
+        body: JSON.stringify({
+          deliveryAddress: address.trim(),
+        }),
+      });
+      if (response.ok) {
+        broadcastOrderUpdate();
+        fetchOrders();
+      } else {
+        const data = await response.json();
+        alert(data?.message || 'Failed to update address');
+      }
+    } catch (error) {
+      console.error('Error updating delivery address:', error);
+      alert('Error updating address');
+    } finally {
+      setMutatingOrderId(null);
     }
   };
 
   useEffect(() => {
     fetchOrders();
 
-    // Auto-refresh orders every 5 seconds
     const interval = setInterval(fetchOrders, 5000);
-    return () => clearInterval(interval);
+    let channel;
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      channel = new BroadcastChannel('orders-sync');
+      channel.onmessage = (event) => {
+        if (event.data?.type === 'ORDERS_UPDATED' && event.data?.source !== 'customer') {
+          fetchOrders();
+        }
+      };
+    }
+
+    return () => {
+      clearInterval(interval);
+      if (channel) {
+        channel.close();
+      }
+    };
   }, [user.id]);
 
   return (
@@ -685,23 +894,28 @@ const LoggedInDashboard = ({ user }) => {
                           <div className="flex items-center text-sm text-gray-700">
                             <Package size={16} className="mr-2 text-gray-500 flex-shrink-0" />
                             <span>
-                              {order.weight || '0'}kg - {order.service}
+                              {(order.weight || 0).toString()}kg -{' '}
+                              {order.serviceType || order.service}
                             </span>
                           </div>
-                          {order.deliveryAddress && (
-                            <div className="flex items-center text-sm text-gray-700">
-                              <Truck size={16} className="mr-2 text-gray-500 flex-shrink-0" />
-                              <span>{order.deliveryAddress}</span>
-                            </div>
-                          )}
+                          <div className="flex items-center text-sm text-gray-700">
+                            <Truck size={16} className="mr-2 text-gray-500 flex-shrink-0" />
+                            <span>
+                              {order.fulfillmentType === 'delivery'
+                                ? order.deliveryAddress || 'Delivery address pending'
+                                : 'Customer will drop off items'}
+                            </span>
+                          </div>
                           <div className="flex items-center text-sm text-gray-700">
                             <CalendarDays size={16} className="mr-2 text-gray-500 flex-shrink-0" />
                             <span>
-                              {new Date(order.eta).toLocaleDateString('en-US', {
-                                month: 'long',
-                                day: 'numeric',
-                                year: 'numeric',
-                              })}
+                              {order.preferredDate
+                                ? new Date(order.preferredDate).toLocaleDateString('en-US', {
+                                    month: 'long',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                  })
+                                : 'Preferred date pending'}
                             </span>
                           </div>
                         </div>
@@ -709,26 +923,79 @@ const LoggedInDashboard = ({ user }) => {
 
                       {expandedOrderId === order.id && (
                         <div className="mt-2 border border-t-0 rounded-b-lg p-4 bg-white space-y-4">
-                          <StatusProgressTracker status={order.status} eta={order.eta}>
+                          <StatusProgressTracker status={order.status} eta={order.preferredDate}>
                             <p className="text-sm text-blue-700">
-                              Expected delivery:{' '}
-                              {new Date(order.eta).toLocaleDateString('en-US', {
-                                month: 'long',
-                                day: 'numeric',
-                                year: 'numeric',
-                              })}
+                              Preferred date:{' '}
+                              {order.preferredDate
+                                ? new Date(order.preferredDate).toLocaleDateString('en-US', {
+                                    month: 'long',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                  })
+                                : 'Pending'}
                             </p>
                           </StatusProgressTracker>
-                          {order.status === 'PENDING' && (
-                            <div className="pt-4 border-t">
-                              <button
-                                onClick={() => handleCancelOrder(order.id, order.status)}
-                                className="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                              >
-                                Cancel Order
-                              </button>
-                              <p className="text-xs text-gray-500 mt-2 text-center">
-                                Once the order is in progress, it cannot be cancelled.
+                          {['PENDING', 'IN_PROGRESS', 'COMPLETED'].includes(order.status) && (
+                            <div className="pt-4 border-t space-y-3">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <button
+                                  onClick={() => handleToggleFulfillment(order, 'pickup')}
+                                  className={`w-full px-4 py-2 rounded-lg font-medium transition-colors border ${
+                                    order.fulfillmentType === 'pickup'
+                                      ? 'bg-blue-500 text-white border-blue-500'
+                                      : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'
+                                  } ${mutatingOrderId === order.id ? 'opacity-70 cursor-wait' : ''}`}
+                                  disabled={mutatingOrderId === order.id}
+                                >
+                                  Switch to Pickup
+                                </button>
+                                <button
+                                  onClick={() => handleToggleFulfillment(order, 'delivery')}
+                                  className={`w-full px-4 py-2 rounded-lg font-medium transition-colors border ${
+                                    order.fulfillmentType === 'delivery'
+                                      ? 'bg-blue-500 text-white border-blue-500'
+                                      : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'
+                                  } ${mutatingOrderId === order.id ? 'opacity-70 cursor-wait' : ''}`}
+                                  disabled={mutatingOrderId === order.id}
+                                >
+                                  Switch to Delivery
+                                </button>
+                                {order.fulfillmentType === 'delivery' &&
+                                  deliveryUpdates[order.id] !== undefined && (
+                                    <input
+                                      type="text"
+                                      placeholder="Update delivery address"
+                                      value={deliveryUpdates[order.id]}
+                                      className="w-full px-4 py-2 rounded-lg border border-gray-300 text-sm"
+                                      onChange={(e) =>
+                                        setDeliveryUpdates((prev) => ({
+                                          ...prev,
+                                          [order.id]: e.target.value,
+                                        }))
+                                      }
+                                      onBlur={() =>
+                                        handleDeliveryAddressUpdate(
+                                          order.id,
+                                          deliveryUpdates[order.id],
+                                          order.status
+                                        )
+                                      }
+                                    />
+                                  )}
+                              </div>
+                              {order.status === 'PENDING' && (
+                                <button
+                                  onClick={() => handleCancelOrder(order.id, order.status)}
+                                  className="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                                >
+                                  Cancel{' '}
+                                  {order.fulfillmentType === 'delivery' ? 'Delivery' : 'Pickup'}
+                                </button>
+                              )}
+                              <p className="text-xs text-gray-500 text-center">
+                                {order.status === 'PENDING'
+                                  ? 'Updates are instant while the order remains pending.'
+                                  : 'You can change delivery type until the order is completed.'}
                               </p>
                             </div>
                           )}
@@ -747,6 +1014,47 @@ const LoggedInDashboard = ({ user }) => {
           </div>
         </div>
       </main>
+
+      {/* Delivery Address Modal */}
+      {deliveryModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-gray-800 mb-4">Enter Delivery Address</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Please provide your delivery address to switch this order to delivery.
+            </p>
+            <textarea
+              value={deliveryModal.address}
+              onChange={(e) =>
+                setDeliveryModal((prev) => ({
+                  ...prev,
+                  address: e.target.value,
+                }))
+              }
+              placeholder="Enter your full delivery address"
+              rows="4"
+              className="w-full p-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeliveryModal({ isOpen: false, orderId: null, address: '' })}
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeliveryAddressSubmit}
+                disabled={
+                  !deliveryModal.address.trim() || mutatingOrderId === deliveryModal.orderId
+                }
+                className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 disabled:bg-blue-300 transition-colors"
+              >
+                {mutatingOrderId === deliveryModal.orderId ? 'Updating...' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
