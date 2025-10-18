@@ -13,7 +13,7 @@
         },
         {
           "key": "Access-Control-Allow-Origin",
-          "value": "*"
+          "value": "https://laundra-track.vercel.app"
         },
         {
           "key": "Access-Control-Allow-Methods",

@@ -11,6 +11,12 @@ const nextConfig = {
     ],
   },
   headers: async () => {
+    // For production, restrict CORS to your domain
+    // In development, allow all origins
+    const allowedOrigin = process.env.NEXT_PUBLIC_API_URL
+      ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '')
+      : '*';
+
     return [
       {
         source: '/api/:path*',
@@ -21,7 +27,7 @@ const nextConfig = {
           },
           {
             key: 'Access-Control-Allow-Origin',
-            value: '*',
+            value: allowedOrigin,
           },
           {
             key: 'Access-Control-Allow-Methods',
