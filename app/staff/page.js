@@ -22,7 +22,10 @@ const StaffTopBar = ({ title, onMenuToggle, staffName }) => {
   return (
     <div className="bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center">
       <div className="flex items-center">
-        <button onClick={onMenuToggle} className="md:hidden mr-4">
+        <button
+          onClick={onMenuToggle}
+          className="mr-4 text-gray-600 hover:text-gray-800 transition-colors"
+        >
           <Menu size={24} />
         </button>
         <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
@@ -599,10 +602,12 @@ export default function StaffPage() {
 
   return (
     <div className="flex h-screen bg-gray-100">
+      {/* Desktop Sidebar - Always visible */}
       <div className="hidden md:block w-64 flex-shrink-0">
         <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
 
+      {/* Mobile Sidebar Overlay */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
           <div
@@ -610,11 +615,11 @@ export default function StaffPage() {
             onClick={() => setIsMobileMenuOpen(false)}
           />
           <div className="absolute left-0 top-0 w-64 h-full bg-white shadow-lg transform transition-transform duration-300 ease-out">
-            <div className="p-4 border-b flex justify-between items-center md:hidden">
+            <div className="p-4 border-b flex justify-between items-center">
               <h2 className="text-lg font-bold text-gray-800">Menu</h2>
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-gray-600 hover:text-gray-800"
+                className="text-gray-600 hover:text-gray-800 transition-colors"
               >
                 <X size={24} />
               </button>
@@ -633,7 +638,7 @@ export default function StaffPage() {
       <div className="flex-1 flex flex-col overflow-y-auto">
         <StaffTopBar
           title={pageTitle}
-          onMenuToggle={() => setIsMobileMenuOpen(true)}
+          onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           staffName={session?.user?.name || session?.user?.firstName}
         />
         <main className="flex-1 p-6">{renderContent()}</main>
