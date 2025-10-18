@@ -1,338 +1,567 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import {
-    Clock,
-    Package,
-    Truck,
-    User,
-    Bell,
-    Menu,
-    Clipboard,
-    TrendingUp,
-    Loader
+  Clock,
+  Package,
+  Truck,
+  User,
+  Bell,
+  Menu,
+  Clipboard,
+  TrendingUp,
+  Loader,
+  AlertTriangle,
 } from 'lucide-react';
 import Sidebar from '@/components/staff/Sidebar';
 import StatusBadge from '@/components/common/StatusBadge';
 
-const StaffTopBar = ({ title, onMenuToggle }) => {
-    return (
-        <div className="bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center">
-            <div className="flex items-center">
-                <button onClick={onMenuToggle} className="md:hidden mr-4">
-                    <Menu size={24} />
-                </button>
-                <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-                <Bell className="text-gray-600 hover:text-gray-800 cursor-pointer" size={20} />
-                <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                        <User className="text-white" size={16} />
-                    </div>
-                    <span className="text-sm font-medium text-gray-800">Staff Member</span>
-                </div>
-            </div>
+const StaffTopBar = ({ title, onMenuToggle, staffName }) => {
+  return (
+    <div className="bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center">
+      <div className="flex items-center">
+        <button onClick={onMenuToggle} className="md:hidden mr-4">
+          <Menu size={24} />
+        </button>
+        <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
+      </div>
+      <div className="flex items-center space-x-4">
+        <Bell className="text-gray-600 hover:text-gray-800 cursor-pointer" size={20} />
+        <div className="flex items-center space-x-2">
+          <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+            <User className="text-white" size={16} />
+          </div>
+          <span className="text-sm font-medium text-gray-800">{staffName || 'Staff Member'}</span>
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
 // Staff Stats Component
 const StaffStats = ({ orders }) => {
-    const stats = [
-        { title: 'Pending Tasks', value: orders.filter(o => o.status === 'PENDING').length, icon: Clock, color: 'bg-yellow-500' },
-        { title: 'In Progress', value: orders.filter(o => o.status === 'IN_PROGRESS').length, icon: Package, color: 'bg-blue-500' },
-        { title: 'Ready for Delivery', value: orders.filter(o => o.status === 'COMPLETED').length, icon: Truck, color: 'bg-green-500' },
-        { title: "Today's Revenue", value: `₱${orders.reduce((sum, order) => sum + order.total, 0).toFixed(2)}`, icon: TrendingUp, color: 'bg-purple-500' }
-    ];
+  const stats = [
+    {
+      title: 'Pending Tasks',
+      value: orders.filter((o) => o.dbStatus === 'pending' || o.dbStatus === 'confirmed').length,
+      icon: Clock,
+      color: 'bg-yellow-500',
+    },
+    {
+      title: 'In Progress',
+      value: orders.filter((o) => o.dbStatus === 'in_progress').length,
+      icon: Package,
+      color: 'bg-blue-500',
+    },
+    {
+      title: 'Ready for Delivery',
+      value: orders.filter((o) => o.dbStatus === 'ready_for_pickup' || o.dbStatus === 'picked_up')
+        .length,
+      icon: Truck,
+      color: 'bg-green-500',
+    },
+    {
+      title: "Today's Revenue",
+      value: `₱${orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0).toFixed(2)}`,
+      icon: TrendingUp,
+      color: 'bg-purple-500',
+    },
+  ];
 
-    return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {stats.map((stat, index) => (
-                <div key={index} className="bg-white rounded-lg shadow-sm p-6 border flex items-center justify-between">
-                    <div>
-                        <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
-                        <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
-                    </div>
-                    <div className={`${stat.color} p-3 rounded-lg`}>
-                        <stat.icon className="text-white" size={24} />
-                    </div>
-                </div>
-            ))}
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      {stats.map((stat, index) => (
+        <div
+          key={index}
+          className="bg-white rounded-lg shadow-sm p-6 border flex items-center justify-between"
+        >
+          <div>
+            <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
+            <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+          </div>
+          <div className={`${stat.color} p-3 rounded-lg`}>
+            <stat.icon className="text-white" size={24} />
+          </div>
         </div>
-    );
+      ))}
+    </div>
+  );
 };
 
 // Order Card Component
-const OrderCard = ({ order, onStatusUpdate }) => {
-    const getNextAction = (status) => {
-        switch (status) {
-            case 'PENDING': return { text: 'Start Wash', color: 'bg-blue-500 hover:bg-blue-600', nextStatus: 'IN_PROGRESS' };
-            case 'IN_PROGRESS': return { text: 'Mark Ready', color: 'bg-green-500 hover:bg-green-600', nextStatus: 'COMPLETED' };
-            case 'COMPLETED': return { text: 'Mark Delivered', color: 'bg-purple-500 hover:bg-purple-600', nextStatus: 'DELIVERED' };
-            default: return null;
-        }
-    };
+const OrderCard = ({ order, onStatusUpdate, onCancel }) => {
+  const getNextAction = (dbStatus) => {
+    switch (dbStatus) {
+      case 'pending':
+        return {
+          text: 'Start Wash',
+          color: 'bg-blue-500 hover:bg-blue-600',
+          nextStatus: 'in_progress',
+        };
+      case 'confirmed':
+        return {
+          text: 'Start Wash',
+          color: 'bg-blue-500 hover:bg-blue-600',
+          nextStatus: 'in_progress',
+        };
+      case 'in_progress':
+        return {
+          text: 'Mark Ready',
+          color: 'bg-green-500 hover:bg-green-600',
+          nextStatus: 'ready_for_pickup',
+        };
+      case 'ready_for_pickup':
+        return {
+          text: 'Mark Picked Up',
+          color: 'bg-purple-500 hover:bg-purple-600',
+          nextStatus: 'picked_up',
+        };
+      case 'picked_up':
+        return {
+          text: 'Mark Delivered',
+          color: 'bg-indigo-500 hover:bg-indigo-600',
+          nextStatus: 'delivered',
+        };
+      default:
+        return null;
+    }
+  };
 
-    const nextAction = getNextAction(order.status);
+  const nextAction = getNextAction(order.dbStatus);
+  const customerName =
+    order.customerId?.firstName && order.customerId?.lastName
+      ? `${order.customerId.firstName} ${order.customerId.lastName}`
+      : 'Walk-in Customer';
+  const customerPhone = order.customerId?.phone || 'N/A';
+  const itemsCount = order.items?.length || 0;
+  const canCancel = order.dbStatus === 'pending' || order.dbStatus === 'confirmed';
 
-    return (
-        <div className="bg-white rounded-lg shadow-sm border p-4 hover:shadow-md transition-shadow flex flex-col justify-between">
-            <div>
-                <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900">{order.user?.name || 'Walk-in Customer'}</h3>
-                        <p className="text-xs text-gray-500">{order.user?.phoneNumber}</p>
-                    </div>
-                    <StatusBadge status={order.status} />
-                </div>
-                <div className="text-sm space-y-2 text-gray-700">
-                    <p><span className="font-medium">ID:</span> <span className="font-mono text-xs">{order.id}</span></p>
-                    <p><span className="font-medium">Weight:</span> {order.weight} kg</p>
-                    <p><span className="font-medium">Service:</span> {order.service}</p>
-                    <p className="text-lg font-bold">₱{order.total.toFixed(2)}</p>
-                </div>
-            </div>
-            {nextAction && (
-                <button
-                    onClick={() => onStatusUpdate(order.id, nextAction.nextStatus)}
-                    className={`w-full mt-4 px-4 py-2 text-white text-sm rounded-lg font-medium transition-colors ${nextAction.color}`}
-                >
-                    {nextAction.text}
-                </button>
-            )}
+  return (
+    <div className="bg-white rounded-lg shadow-sm border p-4 hover:shadow-md transition-shadow flex flex-col justify-between">
+      <div>
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-gray-900">{customerName}</h3>
+            <p className="text-xs text-gray-500">{customerPhone}</p>
+          </div>
+          <StatusBadge status={order.status} />
         </div>
-    );
+        <div className="text-sm space-y-2 text-gray-700">
+          <p>
+            <span className="font-medium">Tracking:</span>{' '}
+            <span className="font-mono text-xs">{order.trackingNumber}</span>
+          </p>
+          <p>
+            <span className="font-medium">Items:</span> {itemsCount}
+          </p>
+          <p>
+            <span className="font-medium">Service:</span> {order.serviceType || 'wash'}
+          </p>
+          <p className="text-lg font-bold">₱{(order.totalAmount || 0).toFixed(2)}</p>
+        </div>
+      </div>
+      <div className="space-y-2 mt-4">
+        {nextAction && (
+          <button
+            onClick={() => onStatusUpdate(order._id, nextAction.nextStatus)}
+            className={`w-full px-4 py-2 text-white text-sm rounded-lg font-medium transition-colors ${nextAction.color}`}
+          >
+            {nextAction.text}
+          </button>
+        )}
+        {canCancel && (
+          <button
+            onClick={() => onCancel(order._id)}
+            className="w-full px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg font-medium transition-colors"
+          >
+            Cancel Order
+          </button>
+        )}
+      </div>
+    </div>
+  );
 };
 
 // Order List View - Updated to include a "Delivered" section
-const OrderListView = ({ orders, onStatusUpdate }) => {
-    const groupedOrders = {
-        PENDING: orders.filter(order => order.status === 'PENDING'),
-        IN_PROGRESS: orders.filter(order => order.status === 'IN_PROGRESS'),
-        COMPLETED: orders.filter(order => order.status === 'COMPLETED'),
-        DELIVERED: orders.filter(order => order.status === 'DELIVERED'),
-    };
+const OrderListView = ({ orders, onStatusUpdate, onCancel }) => {
+  const groupedOrders = {
+    pending: orders.filter(
+      (order) => order.dbStatus === 'pending' || order.dbStatus === 'confirmed'
+    ),
+    in_progress: orders.filter((order) => order.dbStatus === 'in_progress'),
+    ready_for_pickup: orders.filter(
+      (order) => order.dbStatus === 'ready_for_pickup' || order.dbStatus === 'picked_up'
+    ),
+    delivered: orders.filter((order) => order.dbStatus === 'delivered'),
+  };
 
-    const statusHeadings = {
-        PENDING: "Pending",
-        IN_PROGRESS: "In Progress",
-        COMPLETED: "Ready for Delivery / Pickup",
-        DELIVERED: "Completed & Delivered"
-    };
+  const statusHeadings = {
+    pending: 'Pending Orders',
+    in_progress: 'In Progress',
+    ready_for_pickup: 'Ready for Delivery / Pickup',
+    delivered: 'Completed & Delivered',
+  };
 
-    return (
-        <div className="space-y-8">
-            {Object.entries(groupedOrders).map(([status, statusOrders]) => (
-                <div key={status}>
-                    <h2 className="text-xl font-semibold text-gray-800 mb-4 capitalize">
-                        {statusHeadings[status]} ({statusOrders.length})
-                    </h2>
-                    {statusOrders.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            {statusOrders.map((order) => (
-                                <OrderCard key={order.id} order={order} onStatusUpdate={onStatusUpdate} />
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
-                            <Clipboard size={40} className="mx-auto mb-2 text-gray-300" />
-                            <p>No {statusHeadings[status].toLowerCase()} orders</p>
-                        </div>
-                    )}
-                </div>
-            ))}
+  return (
+    <div className="space-y-8">
+      {Object.entries(groupedOrders).map(([status, statusOrders]) => (
+        <div key={status}>
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">
+            {statusHeadings[status]} ({statusOrders.length})
+          </h2>
+          {statusOrders.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {statusOrders.map((order) => (
+                <OrderCard
+                  key={order._id}
+                  order={order}
+                  onStatusUpdate={onStatusUpdate}
+                  onCancel={onCancel}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
+              <Clipboard size={40} className="mx-auto mb-2 text-gray-300" />
+              <p>No {statusHeadings[status].toLowerCase()} orders</p>
+            </div>
+          )}
         </div>
-    );
+      ))}
+    </div>
+  );
 };
 
 const DeliveriesView = ({ orders, onStatusUpdate }) => {
-    const deliveryOrders = orders.filter(o => o.status === 'COMPLETED' || o.status === 'DELIVERED');
+  const deliveryOrders = orders.filter(
+    (o) =>
+      o.dbStatus === 'ready_for_pickup' || o.dbStatus === 'picked_up' || o.dbStatus === 'delivered'
+  );
 
-    return (
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-            <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                    <thead>
-                        <tr className="bg-gray-50 border-b">
-                            <th className="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">Customer</th>
-                            <th className="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">Address</th>
-                            <th className="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">ETA</th>
-                            <th className="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
-                            <th className="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {deliveryOrders.length > 0 ? deliveryOrders.map(order => (
-                            <tr key={order.id} className="border-b last:border-0 hover:bg-gray-50">
-                                <td className="p-3">
-                                    <p className="font-medium text-gray-900">{order.user?.name || 'N/A'}</p>
-                                    <p className="text-xs text-gray-500">{order.user?.phoneNumber}</p>
-                                </td>
-                                <td className="p-3 text-sm text-gray-700">{order.deliveryAddress}</td>
-                                <td className="p-3 text-sm text-gray-700">{new Date(order.eta).toLocaleDateString()}</td>
-                                <td className="p-3"><StatusBadge status={order.status} /></td>
-                                <td className="p-3">
-                                    {order.status === 'COMPLETED' && (
-                                        <button onClick={() => onStatusUpdate(order.id, 'DELIVERED')} className="bg-purple-500 text-white px-3 py-1 rounded-lg text-xs font-medium hover:bg-purple-600">
-                                            Mark Delivered
-                                        </button>
-                                    )}
-                                </td>
-                            </tr>
-                        )) : (
-                            <tr>
-                                <td colSpan="5" className="text-center py-12 text-gray-500">
-                                    No orders ready for delivery.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    );
+  return (
+    <div className="bg-white rounded-lg shadow-sm border p-6">
+      <div className="overflow-x-auto">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="bg-gray-50 border-b">
+              <th className="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                Customer
+              </th>
+              <th className="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                Address
+              </th>
+              <th className="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                Delivery Date
+              </th>
+              <th className="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                Action
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {deliveryOrders.length > 0 ? (
+              deliveryOrders.map((order) => {
+                const customerName =
+                  order.customerId?.firstName && order.customerId?.lastName
+                    ? `${order.customerId.firstName} ${order.customerId.lastName}`
+                    : 'N/A';
+                const customerPhone = order.customerId?.phone || 'N/A';
+
+                return (
+                  <tr key={order._id} className="border-b last:border-0 hover:bg-gray-50">
+                    <td className="p-3">
+                      <p className="font-medium text-gray-900">{customerName}</p>
+                      <p className="text-xs text-gray-500">{customerPhone}</p>
+                    </td>
+                    <td className="p-3 text-sm text-gray-700">{order.deliveryAddress}</td>
+                    <td className="p-3 text-sm text-gray-700">
+                      {order.deliveryDate
+                        ? new Date(order.deliveryDate).toLocaleDateString()
+                        : 'N/A'}
+                    </td>
+                    <td className="p-3">
+                      <StatusBadge status={order.status} />
+                    </td>
+                    <td className="p-3">
+                      {order.dbStatus === 'picked_up' && (
+                        <button
+                          onClick={() => onStatusUpdate(order._id, 'delivered')}
+                          className="bg-purple-500 text-white px-3 py-1 rounded-lg text-xs font-medium hover:bg-purple-600"
+                        >
+                          Mark Delivered
+                        </button>
+                      )}
+                      {order.dbStatus === 'ready_for_pickup' && (
+                        <button
+                          onClick={() => onStatusUpdate(order._id, 'picked_up')}
+                          className="bg-blue-500 text-white px-3 py-1 rounded-lg text-xs font-medium hover:bg-blue-600"
+                        >
+                          Mark Picked Up
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan="5" className="text-center py-12 text-gray-500">
+                  No orders ready for delivery.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 };
 
-const ProfileView = () => {
-    // This is a placeholder until we have real staff authentication
-    const mockStaff = {
-        name: 'John Doe',
-        email: 'john.doe@laundry.com',
-        phone: '09123456789',
-        role: 'STAFF'
-    };
+const ProfileView = ({ session }) => {
+  const staffMember = session?.user || {};
+  const fullName =
+    staffMember.name ||
+    `${staffMember.firstName || ''} ${staffMember.lastName || ''}`.trim() ||
+    'Staff Member';
 
-    return (
-         <div className="bg-white rounded-lg shadow-sm border p-6 max-w-2xl mx-auto">
-            <div className="space-y-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">Full Name</label>
-                    <input type="text" value={mockStaff.name} disabled className="w-full p-2 border rounded-lg bg-gray-100 text-gray-800" />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">Email Address</label>
-                    <input type="email" value={mockStaff.email} disabled className="w-full p-2 border rounded-lg bg-gray-100 text-gray-800" />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">Phone Number</label>
-                    <input type="tel" value={mockStaff.phone} disabled className="w-full p-2 border rounded-lg bg-gray-100 text-gray-800" />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">Role</label>
-                    <input type="text" value={mockStaff.role} disabled className="w-full p-2 border rounded-lg bg-gray-100 text-gray-800" />
-                </div>
-                 <div className="pt-4 border-t mt-6">
-                    <button className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 disabled:bg-blue-300" disabled>Edit Profile (Coming Soon)</button>
-                </div>
-            </div>
+  return (
+    <div className="bg-white rounded-lg shadow-sm border p-6 max-w-2xl mx-auto">
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-600 mb-1">Full Name</label>
+          <input
+            type="text"
+            value={fullName}
+            disabled
+            className="w-full p-2 border rounded-lg bg-gray-100 text-gray-800"
+          />
         </div>
-    );
+        <div>
+          <label className="block text-sm font-medium text-gray-600 mb-1">Email Address</label>
+          <input
+            type="email"
+            value={staffMember.email || 'N/A'}
+            disabled
+            className="w-full p-2 border rounded-lg bg-gray-100 text-gray-800"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-600 mb-1">Phone Number</label>
+          <input
+            type="tel"
+            value={staffMember.phone || 'N/A'}
+            disabled
+            className="w-full p-2 border rounded-lg bg-gray-100 text-gray-800"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-600 mb-1">Role</label>
+          <input
+            type="text"
+            value={(staffMember.role || 'STAFF').toUpperCase()}
+            disabled
+            className="w-full p-2 border rounded-lg bg-gray-100 text-gray-800"
+          />
+        </div>
+        <div className="pt-4 border-t mt-6">
+          <button
+            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 disabled:bg-blue-300"
+            disabled
+          >
+            Edit Profile (Coming Soon)
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 // Main Staff Page Component
 export default function StaffPage() {
-    const [orders, setOrders] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('tasks');
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { data: session, status } = useSession();
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('tasks');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    const fetchOrders = async () => {
-        setLoading(true);
-        try {
-            const res = await fetch('/api/orders');
-            if (res.ok) {
-                const data = await res.json();
-                setOrders(Array.isArray(data) ? data : []);
-            } else {
-                setOrders([]);
-            }
-        } catch (error) {
-            console.error('Error fetching orders:', error);
-            setOrders([]);
-        } finally {
-            setLoading(false);
-        }
-    };
+  // Redirect if not authenticated or not staff/admin
+  useEffect(() => {
+    // Wait for session to load
+    if (status === 'loading') {
+      return;
+    }
 
-    useEffect(() => {
-        fetchOrders();
-    }, []);
+    if (status === 'unauthenticated') {
+      window.location.href = '/customer?error=staff_access_required';
+    } else if (status === 'authenticated') {
+      // Check if user is staff or admin
+      const userRole = session?.user?.role;
+      if (userRole !== 'staff' && userRole !== 'admin') {
+        console.log('Access denied. User role:', userRole);
+        window.location.href = '/customer?error=unauthorized';
+      }
+    }
+  }, [status, session?.user?.role]);
 
-    const handleStatusUpdate = async (orderId, newStatus) => {
-        try {
-            const response = await fetch(`/api/orders/${orderId}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus }),
-            });
-            if (response.ok) {
-                fetchOrders(); // Re-fetch orders to update the UI
-            }
-        } catch (error) {
-            console.error('Error updating status:', error);
-        }
-    };
+  const fetchOrders = async () => {
+    setLoading(true);
+    try {
+      const headers = session?.user?.token ? { Authorization: `Bearer ${session.user.token}` } : {};
+      const res = await fetch('/api/orders', { headers });
+      if (res.ok) {
+        const data = await res.json();
+        const ordersList = data.orders || data;
+        setOrders(Array.isArray(ordersList) ? ordersList : []);
+      } else {
+        setOrders([]);
+      }
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      setOrders([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const pageTitle = {
-        tasks: 'My Tasks',
-        deliveries: 'Deliveries',
-        profile: 'My Profile'
-    }[activeTab];
+  useEffect(() => {
+    if (session?.user?.token) {
+      fetchOrders();
+    }
+  }, [session?.user?.token]);
 
-    const renderContent = () => {
-        if (loading) {
-            return (
-                <div className="flex justify-center items-center h-full">
-                    <Loader className="animate-spin" size={48} />
-                </div>
-            );
-        }
+  const handleStatusUpdate = async (orderId, newStatus) => {
+    try {
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.user?.token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (response.ok) {
+        fetchOrders(); // Re-fetch orders to update the UI
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+    }
+  };
 
-        switch (activeTab) {
-            case 'tasks':
-                return (
-                    <>
-                        <StaffStats orders={orders} />
-                        <OrderListView orders={orders} onStatusUpdate={handleStatusUpdate} />
-                    </>
-                );
-            case 'deliveries':
-                return <DeliveriesView orders={orders} onStatusUpdate={handleStatusUpdate} />;
-            case 'profile':
-                return <ProfileView />;
-            default:
-                return null;
-        }
-    };
+  const handleCancelOrder = async (orderId) => {
+    if (!window.confirm('Are you sure you want to cancel this order?')) {
+      return;
+    }
+    try {
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.user?.token}`,
+        },
+        body: JSON.stringify({ status: 'cancelled' }),
+      });
+      if (response.ok) {
+        fetchOrders(); // Re-fetch orders to update the UI
+      } else {
+        alert('Failed to cancel order');
+      }
+    } catch (error) {
+      console.error('Error canceling order:', error);
+      alert('Error canceling order');
+    }
+  };
 
-    return (
-        <div className="flex h-screen bg-gray-100">
-            <div className="hidden md:block w-64 flex-shrink-0">
-                <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
-            </div>
+  const pageTitle = {
+    tasks: 'My Tasks',
+    deliveries: 'Deliveries',
+    profile: 'My Profile',
+  }[activeTab];
 
-             {isMobileMenuOpen && (
-                <div className="fixed inset-0 z-40 md:hidden">
-                    <div 
-                        className="absolute inset-0 bg-black bg-opacity-50" 
-                        onClick={() => setIsMobileMenuOpen(false)}
-                    />
-                    <div className="relative w-64 h-full bg-white">
-                         <Sidebar activeTab={activeTab} onTabChange={(tab) => {
-                            setActiveTab(tab);
-                            setIsMobileMenuOpen(false);
-                        }} />
-                    </div>
-                </div>
-            )}
-
-            <div className="flex-1 flex flex-col overflow-y-auto">
-                <StaffTopBar title={pageTitle} onMenuToggle={() => setIsMobileMenuOpen(true)} />
-                <main className="flex-1 p-6">
-                    {renderContent()}
-                </main>
-            </div>
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="flex justify-center items-center h-full">
+          <Loader className="animate-spin" size={48} />
         </div>
+      );
+    }
+
+    switch (activeTab) {
+      case 'tasks':
+        return (
+          <>
+            <StaffStats orders={orders} />
+            <OrderListView
+              orders={orders}
+              onStatusUpdate={handleStatusUpdate}
+              onCancel={handleCancelOrder}
+            />
+          </>
+        );
+      case 'deliveries':
+        return <DeliveriesView orders={orders} onStatusUpdate={handleStatusUpdate} />;
+      case 'profile':
+        return <ProfileView session={session} />;
+      default:
+        return null;
+    }
+  };
+
+  // Show loading while checking authentication
+  if (status === 'loading') {
+    return (
+      <div className="flex justify-center items-center h-screen bg-gray-100">
+        <Loader className="animate-spin" size={48} />
+      </div>
     );
+  }
+
+  // Show nothing while redirecting (redirects are handled in useEffect)
+  if (
+    status === 'unauthenticated' ||
+    (status === 'authenticated' &&
+      session?.user?.role !== 'staff' &&
+      session?.user?.role !== 'admin')
+  ) {
+    return null;
+  }
+
+  return (
+    <div className="flex h-screen bg-gray-100">
+      <div className="hidden md:block w-64 flex-shrink-0">
+        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      </div>
+
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-40 md:hidden">
+          <div
+            className="absolute inset-0 bg-black bg-opacity-50"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          <div className="relative w-64 h-full bg-white">
+            <Sidebar
+              activeTab={activeTab}
+              onTabChange={(tab) => {
+                setActiveTab(tab);
+                setIsMobileMenuOpen(false);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="flex-1 flex flex-col overflow-y-auto">
+        <StaffTopBar
+          title={pageTitle}
+          onMenuToggle={() => setIsMobileMenuOpen(true)}
+          staffName={session?.user?.name || session?.user?.firstName}
+        />
+        <main className="flex-1 p-6">{renderContent()}</main>
+      </div>
+    </div>
+  );
 }

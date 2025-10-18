@@ -1,14 +1,21 @@
 import { connectDB } from '@/lib/db/mongodb';
 import { User } from '@/lib/db/models';
 import { generateToken } from '@/lib/auth/jwt';
-import { isValidEmail, isStrongPassword } from '@/utils/validators';
+import { isValidEmail, isStrongPassword } from '@/lib/validators';
 
 export async function POST(request) {
   try {
     await connectDB();
 
-    const { email, password, confirmPassword, firstName, lastName, phone, role = 'customer' } =
-      await request.json();
+    const {
+      email,
+      password,
+      confirmPassword,
+      firstName,
+      lastName,
+      phone,
+      role = 'customer',
+    } = await request.json();
 
     // Validation
     if (!email || !password || !confirmPassword || !firstName || !lastName || !phone) {
@@ -19,25 +26,18 @@ export async function POST(request) {
     }
 
     if (!isValidEmail(email)) {
-      return Response.json(
-        { success: false, message: 'Invalid email format' },
-        { status: 400 }
-      );
+      return Response.json({ success: false, message: 'Invalid email format' }, { status: 400 });
     }
 
     if (password !== confirmPassword) {
-      return Response.json(
-        { success: false, message: 'Passwords do not match' },
-        { status: 400 }
-      );
+      return Response.json({ success: false, message: 'Passwords do not match' }, { status: 400 });
     }
 
     if (!isStrongPassword(password)) {
       return Response.json(
         {
           success: false,
-          message:
-            'Password must be at least 8 characters and include uppercase, number, and special character',
+          message: 'Password must be at least 6 characters',
         },
         { status: 400 }
       );

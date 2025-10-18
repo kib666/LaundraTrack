@@ -37,7 +37,7 @@ export default function EditOrderForm({ order, onSubmit, onCancel }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e) => {
@@ -75,7 +75,12 @@ export default function EditOrderForm({ order, onSubmit, onCancel }) {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Service Type</label>
-          <select name="service" value={formData.service} onChange={handleChange} className="w-full p-2 border rounded-lg text-gray-900">
+          <select
+            name="service"
+            value={formData.service}
+            onChange={handleChange}
+            className="w-full p-2 border rounded-lg text-gray-900"
+          >
             <option>Wash & Fold</option>
             <option>Dry Clean</option>
             <option>Wash & Iron</option>
@@ -83,14 +88,16 @@ export default function EditOrderForm({ order, onSubmit, onCancel }) {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-          <select name="status" value={formData.status} onChange={handleChange} className="w-full p-2 border rounded-lg text-gray-900">
-            <option value="PENDING">Pending</option>
-            <option value="IN_PROGRESS">In Progress</option>
-            <option value="COMPLETED">Ready for Delivery</option>
-            <option value="DELIVERED">Delivered</option>
-            <option value="CANCELLED">Cancelled</option>
-          </select>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Status (Staff Only)
+          </label>
+          <input
+            type="text"
+            name="status"
+            value={formData.status}
+            className="w-full p-2 border rounded-lg text-gray-900 bg-gray-100"
+            readOnly
+          />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
@@ -136,13 +143,20 @@ export default function EditOrderForm({ order, onSubmit, onCancel }) {
         />
       </div>
       <div className="flex space-x-3 pt-4">
-        <button type="button" onClick={onCancel} className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+        >
           Cancel
         </button>
-        <button type="submit" className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+        <button
+          type="submit"
+          className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+        >
           Update Order
         </button>
       </div>
     </form>
   );
-} 
+}

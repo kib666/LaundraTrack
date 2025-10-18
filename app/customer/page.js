@@ -2,481 +2,898 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
+import { getSession } from 'next-auth/react';
 import {
-    Package,
-    Truck,
-    CalendarDays,
-    X,
-    Loader,
-    LogIn,
-    UserPlus,
-    LogOut,
-    History,
-    PlusCircle
+  Package,
+  Truck,
+  CalendarDays,
+  X,
+  Loader,
+  LogIn,
+  UserPlus,
+  LogOut,
+  History,
+  PlusCircle,
+  Shield,
+  Users,
+  User as UserIcon,
 } from 'lucide-react';
 import StatusProgressTracker from '@/components/customer/StatusProgressTracker';
 import StatusBadge from '@/components/common/StatusBadge';
 
 const OrderLookupForm = ({ onLookup, isLoading }) => {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [searchType] = useState('phone');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchType] = useState('phone');
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (searchTerm.trim()) {
-            onLookup(searchTerm.trim(), searchType);
-        }
-    };
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      onLookup(searchTerm.trim(), searchType);
+    }
+  };
 
-    return (
-        <div className="bg-white rounded-lg shadow-sm border p-6 max-w-md mx-auto">
-            <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-800">Track Your Order</h2>
-                <Package className="text-blue-500" size={24} />
-            </div>
-            <p className="text-gray-600 mb-4">
-                Enter your phone number to track your laundry.
-            </p>
-            
-            <form onSubmit={handleSubmit} className="space-y-4">
-                 <div>
-                    <input
-                        type="text"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder={'Enter your phone number'}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                    />
-                </div>
-                
-                <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:bg-blue-300"
-                >
-                    {isLoading ? 'Tracking...' : 'Track Order'}
-                </button>
-            </form>
+  return (
+    <div className="bg-white rounded-lg shadow-sm border p-6 max-w-md mx-auto">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold text-gray-800">Track Your Order</h2>
+        <Package className="text-blue-500" size={24} />
+      </div>
+      <p className="text-gray-600 mb-4">Enter your phone number to track your laundry.</p>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder={'Enter your phone number'}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+          />
         </div>
-    );
+
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:bg-blue-300"
+        >
+          {isLoading ? 'Tracking...' : 'Track Order'}
+        </button>
+      </form>
+    </div>
+  );
 };
 
-const OrderDetails = ({ order, onBack }) => {
-    return (
-        <div className="bg-white rounded-lg shadow-sm border p-6 max-w-4xl mx-auto">
-            <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">Order Details</h2>
-                <button
-                    onClick={onBack}
-                    className="text-gray-500 hover:text-gray-700"
-                >
-                    <X size={24} />
-                </button>
-            </div>
+const OrderDetails = ({ orders, onBack, onCancel }) => {
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
 
-            <div className="mb-8">
-                <StatusProgressTracker status={order.status} />
-            </div>
+  // Handle single order or array of orders
+  const orderList = Array.isArray(orders) ? orders : [orders];
+  const customer = orderList[0]?.user || {};
 
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-                <h3 className="text-xl font-semibold mb-4 text-gray-800">
-                    Order Information
-                </h3>
-                <div className="space-y-4 text-gray-800">
-                    <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Order ID:</span>
-                        <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
-                            {order.id}
-                        </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Customer:</span>
-                        <span className="font-medium">{order.user.name}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Phone:</span>
-                        <span className="font-medium">{order.user.phoneNumber}</span>
-                    </div>
-                     <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Service:</span>
-                        <span className="font-medium">{order.service}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Weight:</span>
-                        <span className="font-medium">{order.weight} kg</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Total:</span>
-                        <span className="font-bold text-lg text-green-600">
-                            ₱{order.total ? order.total.toFixed(2) : '0.00'}
-                        </span>
-                    </div>
-                </div>
-            </div>
+  const canCancelOrder = (status) => {
+    // Can only cancel if status is PENDING
+    return status === 'PENDING';
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm border p-6 max-w-4xl mx-auto">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">Your Orders</h2>
+          <p className="text-sm text-gray-600 mt-1">
+            Customer: <span className="font-medium">{customer.firstName || customer.name}</span> •
+            Phone: <span className="font-mono">{customer.phoneNumber || customer.phone}</span>
+          </p>
         </div>
-    );
+        <button onClick={onBack} className="text-gray-500 hover:text-gray-700">
+          <X size={24} />
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        {orderList.map((order) => (
+          <div key={order.id}>
+            <button
+              onClick={() => setExpandedOrderId(expandedOrderId === order.id ? null : order.id)}
+              className="w-full text-left bg-gray-50 border rounded-lg p-4 transition-all hover:shadow-md hover:border-blue-200 hover:bg-blue-50"
+            >
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="font-bold text-lg text-gray-800">
+                    ₱{order.total ? order.total.toFixed(2) : '0.00'}
+                  </p>
+                  <p className="text-xs text-gray-400 font-mono mt-1">{order.id}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <StatusBadge status={order.status} />
+                  <span className="text-gray-400 text-lg">
+                    {expandedOrderId === order.id ? '▼' : '▶'}
+                  </span>
+                </div>
+              </div>
+              <div className="mt-3 border-t pt-3 space-y-2">
+                <div className="flex items-center text-sm text-gray-700">
+                  <Package size={16} className="mr-2 text-gray-500 flex-shrink-0" />
+                  <span>
+                    {order.weight || '0'} kg - {order.service || order.serviceType}
+                  </span>
+                </div>
+                {order.deliveryAddress && (
+                  <div className="flex items-center text-sm text-gray-700">
+                    <Truck size={16} className="mr-2 text-gray-500 flex-shrink-0" />
+                    <span>{order.deliveryAddress}</span>
+                  </div>
+                )}
+                <div className="flex items-center text-sm text-gray-700">
+                  <CalendarDays size={16} className="mr-2 text-gray-500 flex-shrink-0" />
+                  <span>
+                    {new Date(order.eta || order.deliveryDate).toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
+                  </span>
+                </div>
+              </div>
+            </button>
+
+            {expandedOrderId === order.id && (
+              <div className="mt-2 border border-t-0 rounded-b-lg p-4 bg-white space-y-4">
+                <StatusProgressTracker status={order.status} eta={order.eta || order.deliveryDate}>
+                  <p className="text-sm text-blue-700">
+                    Expected delivery:{' '}
+                    {new Date(order.eta || order.deliveryDate).toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
+                  </p>
+                </StatusProgressTracker>
+                {canCancelOrder(order.status) && (
+                  <div className="pt-4 border-t">
+                    <button
+                      onClick={() => onCancel && onCancel(order.id)}
+                      className="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    >
+                      Cancel Order
+                    </button>
+                    <p className="text-xs text-gray-500 mt-2 text-center">
+                      Once the order is in progress, it cannot be cancelled.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 };
 
 const AuthForm = ({ isRegister = false }) => {
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [phone, setPhone] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+  const { data: session } = useSession();
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setIsLoading(true);
-        setError('');
-        setSuccess('');
-
-        if (isRegister) {
-            // Handle registration
-            const res = await fetch('/api/auth/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, email, phoneNumber: phone, password }),
-            });
-            const data = await res.json();
-            if (res.ok) {
-                setSuccess('Registration successful! Please log in.');
-            } else {
-                setError(data.error || 'Registration failed.');
-            }
-        } else {
-            // Handle login
-            const result = await signIn('credentials', {
-                redirect: false,
-                email,
-                password,
-            });
-
-            if (result.error) {
-                setError('Invalid email or password.');
-            }
+  // Redirect based on role after login
+  useEffect(() => {
+    if (session?.user?.role) {
+      const redirectDelay = setTimeout(() => {
+        switch (session.user.role) {
+          case 'admin':
+            window.location.href = '/admin';
+            break;
+          case 'staff':
+            window.location.href = '/staff';
+            break;
+          case 'customer':
+            // Refresh page to show customer dashboard
+            window.location.href = '/customer';
+            break;
+          default:
+            break;
         }
-        setIsLoading(false);
-    };
+      }, 1000);
+      return () => clearTimeout(redirectDelay);
+    }
+  }, [session?.user?.role]);
 
-    return (
-        <div className="bg-white rounded-lg shadow-sm border p-6 max-w-md mx-auto">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">{isRegister ? 'Create Account' : 'Welcome Back'}</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-                {isRegister && (
-                    <input type="text" placeholder="Full Name" value={name} onChange={(e) => setName(e.target.value)} required className="w-full p-3 border rounded-lg text-gray-900" />
-                )}
-                <input type="email" placeholder="Email Address" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full p-3 border rounded-lg text-gray-900" />
-                {isRegister && (
-                    <input type="tel" placeholder="Phone Number" value={phone} onChange={(e) => setPhone(e.target.value)} required className="w-full p-3 border rounded-lg text-gray-900" />
-                )}
-                <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full p-3 border rounded-lg text-gray-900" />
-                <button type="submit" disabled={isLoading} className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 disabled:bg-blue-300">
-                    {isLoading ? 'Processing...' : (isRegister ? 'Register' : 'Login')}
-                </button>
-                {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
-                {success && <p className="text-green-500 text-sm mt-2">{success}</p>}
-            </form>
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+    setSuccess('');
+
+    if (isRegister) {
+      // Handle registration
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName,
+          lastName,
+          email,
+          phone,
+          password,
+          confirmPassword,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSuccess('Registration successful! Please log in.');
+        setFirstName('');
+        setLastName('');
+        setEmail('');
+        setPhone('');
+        setPassword('');
+        setConfirmPassword('');
+      } else {
+        setError(data.message || 'Registration failed.');
+      }
+    } else {
+      // Handle login
+      const result = await signIn('credentials', {
+        redirect: false,
+        email,
+        password,
+      });
+
+      if (result?.error) {
+        setError(result.error || 'Invalid email or password.');
+      } else if (result?.ok) {
+        setSuccess('Login successful! Redirecting to your dashboard...');
+        // Clear the form - redirect will happen via useEffect when session updates
+        setEmail('');
+        setPassword('');
+      }
+    }
+    setIsLoading(false);
+  };
+
+  return (
+    <div className="max-w-md mx-auto space-y-6">
+      {!isRegister && (
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-blue-50 rounded-lg p-4 text-center border border-blue-200">
+            <UserIcon className="text-blue-500 mx-auto mb-2" size={24} />
+            <p className="text-xs font-semibold text-gray-800">Customer</p>
+            <p className="text-xs text-gray-600 mt-1">Track orders</p>
+          </div>
+          <div className="bg-green-50 rounded-lg p-4 text-center border border-green-200">
+            <Users className="text-green-500 mx-auto mb-2" size={24} />
+            <p className="text-xs font-semibold text-gray-800">Staff</p>
+            <p className="text-xs text-gray-600 mt-1">Manage tasks</p>
+          </div>
+          <div className="bg-purple-50 rounded-lg p-4 text-center border border-purple-200">
+            <Shield className="text-purple-500 mx-auto mb-2" size={24} />
+            <p className="text-xs font-semibold text-gray-800">Admin</p>
+            <p className="text-xs text-gray-600 mt-1">Full control</p>
+          </div>
         </div>
-    );
-};
+      )}
 
+      <div className="bg-white rounded-lg shadow-sm border p-6">
+        <h2 className="text-xl font-bold text-gray-800 mb-2">
+          {isRegister ? 'Create Account' : 'Welcome Back'}
+        </h2>
+        {!isRegister && (
+          <p className="text-sm text-gray-600 mb-4">Login to your account to access the system</p>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {isRegister && (
+            <>
+              <input
+                type="text"
+                placeholder="First Name"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required
+                className="w-full p-3 border rounded-lg text-gray-900"
+              />
+              <input
+                type="text"
+                placeholder="Last Name"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                required
+                className="w-full p-3 border rounded-lg text-gray-900"
+              />
+            </>
+          )}
+          <input
+            type="email"
+            placeholder="Email Address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="w-full p-3 border rounded-lg text-gray-900"
+          />
+          {isRegister && (
+            <input
+              type="tel"
+              placeholder="Phone Number"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              required
+              className="w-full p-3 border rounded-lg text-gray-900"
+            />
+          )}
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="w-full p-3 border rounded-lg text-gray-900"
+          />
+          {isRegister && (
+            <input
+              type="password"
+              placeholder="Confirm Password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              className="w-full p-3 border rounded-lg text-gray-900"
+            />
+          )}
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 disabled:bg-blue-300 transition-colors"
+          >
+            {isLoading ? 'Processing...' : isRegister ? 'Register' : 'Login'}
+          </button>
+          {error && <p className="text-red-500 text-sm mt-2 bg-red-50 p-3 rounded-lg">{error}</p>}
+          {success && (
+            <p className="text-green-600 text-sm mt-2 bg-green-50 p-3 rounded-lg">{success}</p>
+          )}
+        </form>
+
+        {!isRegister && (
+          <p className="text-xs text-gray-500 text-center mt-4">
+            Don't have an account?{' '}
+            <button
+              onClick={() => window.location.reload()}
+              className="text-blue-500 hover:underline"
+            >
+              Create one
+            </button>
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const NewOrderForm = ({ userId, onOrderCreated }) => {
-    const [weight, setWeight] = useState('');
-    const [service, setService] = useState('Wash & Fold');
-    const [deliveryAddress, setDeliveryAddress] = useState('');
-    const [eta, setEta] = useState('');
-    const [notes, setNotes] = useState('');
-    const [error, setError] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const [estimatedPrice, setEstimatedPrice] = useState(0);
+  const { data: session } = useSession();
+  const [weight, setWeight] = useState('');
+  const [service, setService] = useState('Wash & Fold');
+  const [pickupAddress, setPickupAddress] = useState('');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [eta, setEta] = useState('');
+  const [notes, setNotes] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [estimatedPrice, setEstimatedPrice] = useState(0);
 
-    const serviceOptions = [
-        { name: 'Wash & Fold', price: 40, unit: 'kg' },
-        { name: 'Dry Cleaning', price: 150, unit: 'item' },
-        { name: 'Wash & Iron', price: 80, unit: 'kg' },
-        { name: 'Express Service', price: 100, unit: 'add-on' },
-    ];
+  const serviceOptions = [
+    { name: 'Wash & Fold', price: 40, unit: 'kg', type: 'wash' },
+    { name: 'Dry Cleaning', price: 150, unit: 'item', type: 'dry-clean' },
+    { name: 'Wash & Iron', price: 80, unit: 'kg', type: 'iron' },
+    { name: 'Express Service', price: 100, unit: 'add-on', type: 'combo' },
+  ];
 
-    useEffect(() => {
-        const calculatePrice = () => {
-            if (!weight) {
-                setEstimatedPrice(0);
-                return;
-            }
+  useEffect(() => {
+    const calculatePrice = () => {
+      if (!weight) {
+        setEstimatedPrice(0);
+        return;
+      }
 
-            const selectedService = serviceOptions.find(s => s.name === service);
-            if (!selectedService) return;
-            
-            let price = parseFloat(weight) * selectedService.price;
+      const selectedService = serviceOptions.find((s) => s.name === service);
+      if (!selectedService) return;
 
-            if(service === 'Express Service') {
-                const baseService = serviceOptions.find(s => s.name === 'Wash & Fold');
-                price = (parseFloat(weight) * baseService.price) + selectedService.price;
-            }
+      let price = parseFloat(weight) * selectedService.price;
 
-            setEstimatedPrice(price);
-        };
-        calculatePrice();
-    }, [weight, service]);
+      if (service === 'Express Service') {
+        const baseService = serviceOptions.find((s) => s.name === 'Wash & Fold');
+        price = parseFloat(weight) * baseService.price + selectedService.price;
+      }
 
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setIsLoading(true);
-        setError('');
-
-        try {
-            const res = await fetch('/api/orders', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    customerType: 'existing',
-                    userId: userId,
-                    weight: parseFloat(weight),
-                    service,
-                    deliveryAddress,
-                    eta: eta ? new Date(eta) : null,
-                    notes,
-                }),
-            });
-
-            if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.error || 'Failed to create order.');
-            }
-            
-            setWeight('');
-            setNotes('');
-            setService('Wash & Fold');
-            setDeliveryAddress('');
-            setEta('');
-            onOrderCreated();
-
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setIsLoading(false);
-        }
+      setEstimatedPrice(price);
     };
+    calculatePrice();
+  }, [weight, service]);
 
-    return (
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 w-full">
-            <div className="flex items-center space-x-3 mb-6">
-                <div className="bg-green-100 p-2 rounded-full">
-                    <PlusCircle className="text-green-600" size={24} />
-                </div>
-                <h2 className="text-2xl font-bold text-gray-800">Create New Order</h2>
-            </div>
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Service Type</label>
-                    <select value={service} onChange={(e) => setService(e.target.value)} className="w-full p-3 border rounded-lg text-gray-900 bg-white">
-                        {serviceOptions.map(s => <option key={s.name}>{s.name}</option>)}
-                    </select>
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
-                    <input type="number" step="0.1" placeholder="e.g., 5.5" value={weight} onChange={(e) => setWeight(e.target.value)} required className="w-full p-3 border rounded-lg text-gray-900" />
-                </div>
-                {estimatedPrice > 0 && (
-                    <div className="p-3 bg-blue-50 rounded-lg text-center">
-                        <p className="text-sm text-gray-600">Estimated Price</p>
-                        <p className="text-xl font-bold text-blue-600">₱{estimatedPrice.toFixed(2)}</p>
-                    </div>
-                )}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Address</label>
-                    <input type="text" placeholder="Your full address" value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} required className="w-full p-3 border rounded-lg text-gray-900" />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Delivery Date</label>
-                    <input type="date" value={eta} onChange={(e) => setEta(e.target.value)} required className="w-full p-3 border rounded-lg text-gray-900" />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
-                    <textarea placeholder="e.g., Special instructions for delicate items" value={notes} onChange={(e) => setNotes(e.target.value)} rows="3" className="w-full p-3 border rounded-lg text-gray-900" />
-                </div>
-                <button type="submit" disabled={isLoading || !weight} className="w-full bg-green-500 text-white py-3 rounded-lg font-medium hover:bg-green-600 disabled:bg-green-300 disabled:cursor-not-allowed">
-                    {isLoading ? 'Submitting...' : 'Submit Order'}
-                </button>
-                {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
-            </form>
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+
+    try {
+      // Get JWT token from session
+      if (!session?.user?.token) {
+        throw new Error('Authentication token not found. Please log in again.');
+      }
+
+      const selectedService = serviceOptions.find((s) => s.name === service);
+      const totalAmount = estimatedPrice;
+
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.user.token}`,
+        },
+        body: JSON.stringify({
+          items: [
+            {
+              name: service,
+              quantity: parseFloat(weight),
+              price: selectedService.price,
+            },
+          ],
+          totalAmount,
+          pickupAddress: pickupAddress || 'To be arranged',
+          deliveryAddress,
+          description: `${service} service for ${weight}kg`,
+          deliveryDate: eta ? new Date(eta) : null,
+          serviceType: selectedService.type,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || 'Failed to create order.');
+      }
+
+      setWeight('');
+      setNotes('');
+      setService('Wash & Fold');
+      setPickupAddress('');
+      setDeliveryAddress('');
+      setEta('');
+      onOrderCreated();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 w-full">
+      <div className="flex items-center space-x-3 mb-6">
+        <div className="bg-green-100 p-2 rounded-full">
+          <PlusCircle className="text-green-600" size={24} />
         </div>
-    );
+        <h2 className="text-2xl font-bold text-gray-800">Create New Order</h2>
+      </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Service Type</label>
+          <select
+            value={service}
+            onChange={(e) => setService(e.target.value)}
+            className="w-full p-3 border rounded-lg text-gray-900 bg-white"
+          >
+            {serviceOptions.map((s) => (
+              <option key={s.name}>{s.name}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
+          <input
+            type="number"
+            step="0.1"
+            placeholder="e.g., 5.5"
+            value={weight}
+            onChange={(e) => setWeight(e.target.value)}
+            required
+            className="w-full p-3 border rounded-lg text-gray-900"
+          />
+        </div>
+        {estimatedPrice > 0 && (
+          <div className="p-3 bg-blue-50 rounded-lg text-center">
+            <p className="text-sm text-gray-600">Estimated Price</p>
+            <p className="text-xl font-bold text-blue-600">₱{estimatedPrice.toFixed(2)}</p>
+          </div>
+        )}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Pickup Address (Optional)
+          </label>
+          <input
+            type="text"
+            placeholder="Where we'll pick up your laundry"
+            value={pickupAddress}
+            onChange={(e) => setPickupAddress(e.target.value)}
+            className="w-full p-3 border rounded-lg text-gray-900"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Address</label>
+          <input
+            type="text"
+            placeholder="Your full address"
+            value={deliveryAddress}
+            onChange={(e) => setDeliveryAddress(e.target.value)}
+            required
+            className="w-full p-3 border rounded-lg text-gray-900"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Preferred Delivery Date
+          </label>
+          <input
+            type="date"
+            value={eta}
+            onChange={(e) => setEta(e.target.value)}
+            required
+            className="w-full p-3 border rounded-lg text-gray-900"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
+          <textarea
+            placeholder="e.g., Special instructions for delicate items"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows="3"
+            className="w-full p-3 border rounded-lg text-gray-900"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={isLoading || !weight}
+          className="w-full bg-green-500 text-white py-3 rounded-lg font-medium hover:bg-green-600 disabled:bg-green-300 disabled:cursor-not-allowed"
+        >
+          {isLoading ? 'Submitting...' : 'Submit Order'}
+        </button>
+        {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+      </form>
+    </div>
+  );
 };
-
 
 const LoggedInDashboard = ({ user }) => {
-    const [orders, setOrders] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+  const [orders, setOrders] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
 
-    const fetchOrders = async () => {
-        const res = await fetch(`/api/orders/user/${user.id}`);
-        if (res.ok) {
-            const data = await res.json();
-            setOrders(data);
-        }
-        setIsLoading(false);
-    };
+  const fetchOrders = async () => {
+    const res = await fetch(`/api/orders/user/${user.id}`);
+    if (res.ok) {
+      const data = await res.json();
+      setOrders(data);
+    }
+    setIsLoading(false);
+  };
 
-    useEffect(() => {
-        fetchOrders();
-    }, [user.id]);
+  const handleCancelOrder = async (orderId, orderStatus) => {
+    // Check if order can be cancelled (only PENDING status)
+    if (orderStatus !== 'PENDING') {
+      alert('This order cannot be cancelled. Only pending orders can be cancelled.');
+      return;
+    }
 
-    return (
-        <div className="min-h-screen bg-gray-50">
-            <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-30">
-                <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-                    <h1 className="text-2xl font-bold text-gray-800">
-                        Welcome, <span className="text-blue-600">{user.name.split(' ')[0]}</span>!
-                    </h1>
-                    <button
-                        onClick={() => signOut({ callbackUrl: '/' })}
-                        className="flex items-center space-x-2 text-gray-600 hover:text-red-500 transition-colors"
-                    >
-                        <LogOut size={18} />
-                        <span className="font-medium">Logout</span>
-                    </button>
-                </div>
-            </header>
+    if (!window.confirm('Are you sure you want to cancel this order?')) {
+      return;
+    }
+    try {
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: 'cancelled' }),
+      });
+      if (response.ok) {
+        alert('Order cancelled successfully');
+        fetchOrders(); // Refresh the orders list
+      } else {
+        alert('Failed to cancel order');
+      }
+    } catch (error) {
+      console.error('Error canceling order:', error);
+      alert('Error canceling order');
+    }
+  };
 
-            <main className="container mx-auto p-6 grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
-                <div className="lg:col-span-2">
-                    <NewOrderForm userId={user.id} onOrderCreated={fetchOrders} />
-                </div>
+  useEffect(() => {
+    fetchOrders();
 
-                <div className="lg:col-span-3">
-                    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
-                        <div className="flex items-center space-x-3 mb-6">
-                            <div className="bg-blue-100 p-2 rounded-full">
-                                <History className="text-blue-600" size={24} />
-                            </div>
-                            <h2 className="text-2xl font-bold text-gray-800">Your Order History</h2>
-                        </div>
-                        {isLoading ? (
-                            <div className="text-center py-10">
-                                <Loader className="animate-spin text-blue-500 mx-auto" size={32} />
-                                <p className="mt-2 text-gray-600">Loading orders...</p>
-                            </div>
-                        ) : orders.length > 0 ? (
-                            <div className="space-y-4">
-                                {orders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map((order) => (
-                                    <div key={order.id} className="bg-gray-50 border rounded-lg p-4 transition-all hover:shadow-md hover:border-blue-200">
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <p className="font-bold text-lg text-gray-800">₱{order.total.toFixed(2)}</p>
-                                                <p className="text-xs text-gray-400 font-mono mt-1">{order.id}</p>
-                                            </div>
-                                            <StatusBadge status={order.status} />
-                                        </div>
-                                        <div className="mt-3 border-t pt-3 space-y-2">
-                                            <div className="flex items-center text-sm text-gray-700">
-                                                <Package size={16} className="mr-2 text-gray-500 flex-shrink-0" />
-                                                <span>{order.weight}kg - {order.service}</span>
-                                            </div>
-                                            {order.deliveryAddress && (
-                                                <div className="flex items-center text-sm text-gray-700">
-                                                    <Truck size={16} className="mr-2 text-gray-500 flex-shrink-0" />
-                                                    <span>{order.deliveryAddress}</span>
-                                                </div>
-                                            )}
-                                            <div className="flex items-center text-sm text-gray-700">
-                                                <CalendarDays size={16} className="mr-2 text-gray-500 flex-shrink-0" />
-                                                <span>
-                                                    {new Date(order.eta).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center py-10 border-2 border-dashed rounded-lg">
-                                <Package className="mx-auto text-gray-400" size={40} />
-                                <p className="mt-2 text-gray-600">You have no orders yet.</p>
-                                <p className="text-sm text-gray-500">Create a new one to get started!</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </main>
+    // Auto-refresh orders every 5 seconds
+    const interval = setInterval(fetchOrders, 5000);
+    return () => clearInterval(interval);
+  }, [user.id]);
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-30">
+        <div className="container mx-auto px-6 py-4 flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-gray-800">
+            Welcome, <span className="text-blue-600">{user.name.split(' ')[0]}</span>!
+          </h1>
+          <button
+            onClick={() => signOut({ callbackUrl: '/' })}
+            className="flex items-center space-x-2 text-gray-600 hover:text-red-500 transition-colors"
+          >
+            <LogOut size={18} />
+            <span className="font-medium">Logout</span>
+          </button>
         </div>
-    );
+      </header>
+
+      <main className="container mx-auto p-6 grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+        <div className="lg:col-span-2">
+          <NewOrderForm userId={user.id} onOrderCreated={fetchOrders} />
+        </div>
+
+        <div className="lg:col-span-3">
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="bg-blue-100 p-2 rounded-full">
+                <History className="text-blue-600" size={24} />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800">Your Order History</h2>
+            </div>
+            {isLoading ? (
+              <div className="text-center py-10">
+                <Loader className="animate-spin text-blue-500 mx-auto" size={32} />
+                <p className="mt-2 text-gray-600">Loading orders...</p>
+              </div>
+            ) : orders.length > 0 ? (
+              <div className="space-y-4">
+                {orders
+                  .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                  .map((order) => (
+                    <div key={order.id}>
+                      <button
+                        onClick={() =>
+                          setExpandedOrderId(expandedOrderId === order.id ? null : order.id)
+                        }
+                        className="w-full text-left bg-gray-50 border rounded-lg p-4 transition-all hover:shadow-md hover:border-blue-200 hover:bg-blue-50"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-bold text-lg text-gray-800">
+                              ₱{order.total.toFixed(2)}
+                            </p>
+                            <p className="text-xs text-gray-400 font-mono mt-1">{order.id}</p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <StatusBadge status={order.status} />
+                            <span className="text-gray-400 text-lg">
+                              {expandedOrderId === order.id ? '▼' : '▶'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="mt-3 border-t pt-3 space-y-2">
+                          <div className="flex items-center text-sm text-gray-700">
+                            <Package size={16} className="mr-2 text-gray-500 flex-shrink-0" />
+                            <span>
+                              {order.weight || '0'}kg - {order.service}
+                            </span>
+                          </div>
+                          {order.deliveryAddress && (
+                            <div className="flex items-center text-sm text-gray-700">
+                              <Truck size={16} className="mr-2 text-gray-500 flex-shrink-0" />
+                              <span>{order.deliveryAddress}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center text-sm text-gray-700">
+                            <CalendarDays size={16} className="mr-2 text-gray-500 flex-shrink-0" />
+                            <span>
+                              {new Date(order.eta).toLocaleDateString('en-US', {
+                                month: 'long',
+                                day: 'numeric',
+                                year: 'numeric',
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                      </button>
+
+                      {expandedOrderId === order.id && (
+                        <div className="mt-2 border border-t-0 rounded-b-lg p-4 bg-white space-y-4">
+                          <StatusProgressTracker status={order.status} eta={order.eta}>
+                            <p className="text-sm text-blue-700">
+                              Expected delivery:{' '}
+                              {new Date(order.eta).toLocaleDateString('en-US', {
+                                month: 'long',
+                                day: 'numeric',
+                                year: 'numeric',
+                              })}
+                            </p>
+                          </StatusProgressTracker>
+                          {order.status === 'PENDING' && (
+                            <div className="pt-4 border-t">
+                              <button
+                                onClick={() => handleCancelOrder(order.id, order.status)}
+                                className="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                              >
+                                Cancel Order
+                              </button>
+                              <p className="text-xs text-gray-500 mt-2 text-center">
+                                Once the order is in progress, it cannot be cancelled.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <div className="text-center py-10 border-2 border-dashed rounded-lg">
+                <Package className="mx-auto text-gray-400" size={40} />
+                <p className="mt-2 text-gray-600">You have no orders yet.</p>
+                <p className="text-sm text-gray-500">Create a new one to get started!</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
 };
 
-
 const CustomerPortal = () => {
-    const { data: session, status } = useSession();
-    const [activeTab, setActiveTab] = useState('track'); // track, login, register
-    const [view, setView] = useState('lookup'); // 'lookup', 'details'
-    const [order, setOrder] = useState(null);
-    const [error, setError] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+  const { data: session, status } = useSession();
+  const [activeTab, setActiveTab] = useState('track'); // track, login, register
+  const [view, setView] = useState('lookup'); // 'lookup', 'details'
+  const [order, setOrder] = useState(null);
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-    const handleOrderLookup = async (searchTerm, type) => {
-        setIsLoading(true);
-        setError('');
-        setOrder(null);
-        try {
-            const response = await fetch(
-                `/api/orders/lookup?type=${type}&q=${searchTerm}`
-            );
-            if (!response.ok) {
-                const err = await response.json();
-                throw new Error(err.error || 'Order not found');
-            }
-            const data = await response.json();
-            setOrder(data);
-            setView('details');
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setIsLoading(false);
+  // Redirect admin and staff users to their portals
+  useEffect(() => {
+    if (session?.user?.role && status === 'authenticated') {
+      const redirectDelay = setTimeout(() => {
+        if (session.user.role === 'admin') {
+          window.location.href = '/admin';
+        } else if (session.user.role === 'staff') {
+          window.location.href = '/staff';
         }
-    };
+      }, 500);
+      return () => clearTimeout(redirectDelay);
+    }
+  }, [session?.user?.role, status]);
 
-    const backToLookup = () => {
+  const handleOrderLookup = async (searchTerm, type) => {
+    setIsLoading(true);
+    setError('');
+    setOrder(null);
+    try {
+      const response = await fetch(`/api/orders/lookup?type=${type}&q=${searchTerm}`);
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Order not found');
+      }
+      const data = await response.json();
+      setOrder(data);
+      setView('details');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const backToLookup = () => {
+    setOrder(null);
+    setError('');
+    setView('lookup');
+  };
+
+  const handleCancelOrder = async (orderId) => {
+    if (!window.confirm('Are you sure you want to cancel this order?')) {
+      return;
+    }
+    try {
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: 'cancelled' }),
+      });
+      if (response.ok) {
         setOrder(null);
         setError('');
         setView('lookup');
-    };
-
-    if (status === 'loading') {
-        return (
-            <div className="min-h-screen flex justify-center items-center bg-gray-50">
-                <Loader className="animate-spin text-blue-500" size={48} />
-            </div>
-        )
+        alert('Order cancelled successfully');
+      } else {
+        alert('Failed to cancel order');
+      }
+    } catch (error) {
+      console.error('Error canceling order:', error);
+      alert('Error canceling order');
     }
+  };
 
-    if (session) {
-        return <LoggedInDashboard user={session.user} />;
-    }
-
+  if (status === 'loading') {
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4">
-             <div className="w-full max-w-md">
-                <div className="flex border-b mb-4">
-                    <button onClick={() => setActiveTab('track')} className={`px-4 py-2 flex items-center space-x-2 ${activeTab === 'track' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500'}`}><Package size={18}/><span>Track</span></button>
-                    <button onClick={() => setActiveTab('login')} className={`px-4 py-2 flex items-center space-x-2 ${activeTab === 'login' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500'}`}><LogIn size={18}/><span>Login</span></button>
-                    <button onClick={() => setActiveTab('register')} className={`px-4 py-2 flex items-center space-x-2 ${activeTab === 'register' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500'}`}><UserPlus size={18}/><span>Register</span></button>
-                </div>
-
-                {activeTab === 'track' && (
-                    <div>
-                        {view === 'lookup' && <OrderLookupForm onLookup={handleOrderLookup} isLoading={isLoading}/>}
-                        {view === 'details' && order && <OrderDetails order={order} onBack={backToLookup} />}
-                        {error && <p className="mt-4 text-center text-red-500">{error}</p>}
-                    </div>
-                )}
-                {activeTab === 'login' && <AuthForm />}
-                {activeTab === 'register' && <AuthForm isRegister />}
-            </div>
-        </div>
+      <div className="min-h-screen flex justify-center items-center bg-gray-50">
+        <Loader className="animate-spin text-blue-500" size={48} />
+      </div>
     );
+  }
+
+  // If user is admin or staff, show loading while redirecting
+  if (session?.user?.role && (session.user.role === 'admin' || session.user.role === 'staff')) {
+    return (
+      <div className="min-h-screen flex flex-col justify-center items-center bg-gray-50">
+        <Loader className="animate-spin text-blue-500 mb-4" size={48} />
+        <p className="text-gray-600 font-medium">
+          {session.user.role === 'admin'
+            ? 'Redirecting to Admin Dashboard...'
+            : 'Redirecting to Staff Portal...'}
+        </p>
+      </div>
+    );
+  }
+
+  if (session) {
+    return <LoggedInDashboard user={session.user} />;
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4">
+      <div className="w-full max-w-md">
+        <div className="flex border-b mb-4">
+          <button
+            onClick={() => setActiveTab('track')}
+            className={`px-4 py-2 flex items-center space-x-2 ${activeTab === 'track' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500'}`}
+          >
+            <Package size={18} />
+            <span>Track</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('login')}
+            className={`px-4 py-2 flex items-center space-x-2 ${activeTab === 'login' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500'}`}
+          >
+            <LogIn size={18} />
+            <span>Login</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('register')}
+            className={`px-4 py-2 flex items-center space-x-2 ${activeTab === 'register' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500'}`}
+          >
+            <UserPlus size={18} />
+            <span>Register</span>
+          </button>
+        </div>
+
+        {activeTab === 'track' && (
+          <div>
+            {view === 'lookup' && (
+              <OrderLookupForm onLookup={handleOrderLookup} isLoading={isLoading} />
+            )}
+            {view === 'details' && order && (
+              <OrderDetails orders={order} onBack={backToLookup} onCancel={handleCancelOrder} />
+            )}
+            {error && <p className="mt-4 text-center text-red-500">{error}</p>}
+          </div>
+        )}
+        {activeTab === 'login' && <AuthForm />}
+        {activeTab === 'register' && <AuthForm isRegister />}
+      </div>
+    </div>
+  );
 };
 
 export default CustomerPortal;

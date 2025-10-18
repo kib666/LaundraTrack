@@ -4,10 +4,11 @@ import React, { useState, useEffect } from 'react';
 
 export default function UserForm({ user, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
-    phoneNumber: '',
-    role: 'STAFF',
+    phone: '',
+    role: 'staff',
     password: '',
   });
 
@@ -15,20 +16,28 @@ export default function UserForm({ user, onSubmit, onCancel }) {
     console.log('UserForm: user prop changed', user);
     if (user) {
       setFormData({
-        name: user.name || '',
+        firstName: user.firstName || user.name?.split(' ')[0] || '',
+        lastName: user.lastName || user.name?.split(' ').slice(1).join(' ') || '',
         email: user.email || '',
-        phoneNumber: user.phoneNumber || '',
-        role: user.role || 'STAFF',
+        phone: user.phone || user.phoneNumber || '',
+        role: user.role || 'staff',
         password: '',
       });
     } else {
-      setFormData({ name: '', email: '', phoneNumber: '', role: 'STAFF', password: '' });
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        role: 'staff',
+        password: '',
+      });
     }
   }, [user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e) => {
@@ -39,16 +48,29 @@ export default function UserForm({ user, onSubmit, onCancel }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-        <input
-          type="text"
-          name="name"
-          value={formData.name}
-          onChange={handleChange}
-          className="w-full p-2 border rounded-lg text-gray-900"
-          required
-        />
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+          <input
+            type="text"
+            name="firstName"
+            value={formData.firstName}
+            onChange={handleChange}
+            className="w-full p-2 border rounded-lg text-gray-900"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+          <input
+            type="text"
+            name="lastName"
+            value={formData.lastName}
+            onChange={handleChange}
+            className="w-full p-2 border rounded-lg text-gray-900"
+            required
+          />
+        </div>
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -65,10 +87,11 @@ export default function UserForm({ user, onSubmit, onCancel }) {
         <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
         <input
           type="tel"
-          name="phoneNumber"
-          value={formData.phoneNumber}
+          name="phone"
+          value={formData.phone}
           onChange={handleChange}
           className="w-full p-2 border rounded-lg text-gray-900"
+          required
         />
       </div>
       <div>
@@ -79,9 +102,9 @@ export default function UserForm({ user, onSubmit, onCancel }) {
           onChange={handleChange}
           className="w-full p-2 border rounded-lg text-gray-900"
         >
-          <option value="ADMIN">Admin</option>
-          <option value="STAFF">Staff</option>
-          <option value="CUSTOMER">Customer</option>
+          <option value="admin">Admin</option>
+          <option value="staff">Staff</option>
+          <option value="customer">Customer</option>
         </select>
       </div>
       <div>
@@ -98,7 +121,11 @@ export default function UserForm({ user, onSubmit, onCancel }) {
         />
       </div>
       <div className="flex space-x-3 pt-2">
-        <button type="button" onClick={onCancel} className="flex-1 px-4 py-2 text-gray-600 border rounded-lg">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="flex-1 px-4 py-2 text-gray-600 border rounded-lg"
+        >
           Cancel
         </button>
         <button type="submit" className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg">
@@ -107,4 +134,4 @@ export default function UserForm({ user, onSubmit, onCancel }) {
       </div>
     </form>
   );
-} 
+}

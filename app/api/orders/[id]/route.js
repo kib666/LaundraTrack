@@ -20,24 +20,58 @@ export async function GET(request, { params }) {
       .populate('staffId', 'firstName lastName email');
 
     if (!order) {
-      return Response.json(
-        { success: false, message: 'Order not found' },
-        { status: 404 }
-      );
+      return Response.json({ success: false, message: 'Order not found' }, { status: 404 });
     }
 
     // Check authorization - customer can only see their own orders
     if (auth.user.role === 'customer' && order.customerId._id.toString() !== auth.user.id) {
-      return Response.json(
-        { success: false, message: 'Access denied' },
-        { status: 403 }
-      );
+      return Response.json({ success: false, message: 'Access denied' }, { status: 403 });
     }
+
+    // Helper function to normalize status to uppercase for UI
+    const normalizeStatus = (status) => {
+      const statusMap = {
+        pending: 'PENDING',
+        confirmed: 'PENDING',
+        in_progress: 'IN_PROGRESS',
+        ready_for_pickup: 'COMPLETED',
+        picked_up: 'COMPLETED',
+        delivered: 'DELIVERED',
+        cancelled: 'CANCELLED',
+      };
+      return statusMap[status] || status.toUpperCase();
+    };
+
+    // Format order for consistency
+    const formattedOrder = {
+      _id: order._id,
+      id: order._id,
+      trackingNumber: order.trackingNumber,
+      customerId: order.customerId,
+      staffId: order.staffId,
+      status: normalizeStatus(order.status),
+      dbStatus: order.status,
+      items: order.items,
+      totalAmount: order.totalAmount,
+      total: order.totalAmount,
+      pickupAddress: order.pickupAddress,
+      deliveryAddress: order.deliveryAddress,
+      deliveryDate: order.deliveryDate,
+      eta: order.deliveryDate,
+      pickupDate: order.pickupDate,
+      serviceType: order.serviceType,
+      service: order.serviceType,
+      weight: order.weight,
+      paymentStatus: order.paymentStatus,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+      user: order.customerId,
+    };
 
     return Response.json(
       {
         success: true,
-        order,
+        order: formattedOrder,
       },
       { status: 200 }
     );
@@ -64,7 +98,10 @@ export async function PATCH(request, { params }) {
     // Check approval
     const approval = requireApproval(auth.user);
     if (approval.error) {
-      return Response.json({ success: false, message: approval.error }, { status: approval.status });
+      return Response.json(
+        { success: false, message: approval.error },
+        { status: approval.status }
+      );
     }
 
     const { id } = params;
@@ -73,18 +110,12 @@ export async function PATCH(request, { params }) {
     // Find order
     const order = await Order.findById(id);
     if (!order) {
-      return Response.json(
-        { success: false, message: 'Order not found' },
-        { status: 404 }
-      );
+      return Response.json({ success: false, message: 'Order not found' }, { status: 404 });
     }
 
     // Check authorization
     if (auth.user.role === 'customer' && order.customerId.toString() !== auth.user.id) {
-      return Response.json(
-        { success: false, message: 'Access denied' },
-        { status: 403 }
-      );
+      return Response.json({ success: false, message: 'Access denied' }, { status: 403 });
     }
 
     // Admin/Staff can update most fields
@@ -150,10 +181,7 @@ export async function DELETE(request, { params }) {
 
     const order = await Order.findByIdAndDelete(id);
     if (!order) {
-      return Response.json(
-        { success: false, message: 'Order not found' },
-        { status: 404 }
-      );
+      return Response.json({ success: false, message: 'Order not found' }, { status: 404 });
     }
 
     return Response.json(

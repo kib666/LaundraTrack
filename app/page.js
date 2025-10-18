@@ -1,29 +1,57 @@
 'use client';
 
 import Link from 'next/link';
-import { Box, User, Users, Truck, ArrowRight, Package, Phone, Mail, MapPin, Clock } from 'lucide-react';
+import { useState } from 'react';
+import {
+  Box,
+  User,
+  Users,
+  Truck,
+  ArrowRight,
+  Package,
+  Phone,
+  Mail,
+  MapPin,
+  Clock,
+} from 'lucide-react';
+import PortalAuthModal from '@/components/common/PortalAuthModal';
 
 export default function HomePage() {
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [selectedPortal, setSelectedPortal] = useState(null);
+
+  const handlePortalClick = (portalType) => {
+    setSelectedPortal(portalType);
+    setIsAuthModalOpen(true);
+  };
+
+  const handleCloseAuthModal = () => {
+    setIsAuthModalOpen(false);
+    setSelectedPortal(null);
+  };
+
   const portalCards = [
     {
-      href: '/customer',
+      portalType: 'customer',
       icon: User,
       title: 'Customer Portal',
       description: 'Track your orders, book appointments, and manage your laundry services easily.',
       color: 'blue',
     },
     {
-      href: '/admin',
+      portalType: 'admin',
       icon: Users,
       title: 'Admin Portal',
-      description: 'Manage orders, appointments, staff, and business operations from one dashboard.',
+      description:
+        'Manage orders, appointments, staff, and business operations from one dashboard.',
       color: 'purple',
     },
     {
-      href: '/staff',
+      portalType: 'staff',
       icon: Truck,
       title: 'Staff Portal',
-      description: 'View assigned tasks, update order status, and manage daily operations efficiently.',
+      description:
+        'View assigned tasks, update order status, and manage daily operations efficiently.',
       color: 'green',
     },
   ];
@@ -32,23 +60,23 @@ export default function HomePage() {
     {
       icon: Package,
       title: 'Order Management',
-      description: 'Track orders from pickup to delivery with real-time status updates'
+      description: 'Track orders from pickup to delivery with real-time status updates',
     },
     {
       icon: Clock,
       title: 'Appointment Booking',
-      description: 'Easy online scheduling for pickup and delivery appointments'
+      description: 'Easy online scheduling for pickup and delivery appointments',
     },
     {
       icon: Users,
       title: 'Staff Management',
-      description: 'Assign tasks and monitor staff productivity efficiently'
+      description: 'Assign tasks and monitor staff productivity efficiently',
     },
     {
       icon: Truck,
       title: 'Delivery Tracking',
-      description: 'Real-time delivery tracking with estimated arrival times'
-    }
+      description: 'Real-time delivery tracking with estimated arrival times',
+    },
   ];
 
   const cardColors = {
@@ -72,7 +100,6 @@ export default function HomePage() {
     },
   };
 
-
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800">
       {/* Navigation */}
@@ -85,10 +112,16 @@ export default function HomePage() {
             </Link>
 
             <div className="hidden md:flex items-center space-x-8">
-              <Link href="#features" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">
+              <Link
+                href="#features"
+                className="text-gray-600 hover:text-blue-600 transition-colors font-medium"
+              >
                 Features
               </Link>
-              <Link href="#contact" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">
+              <Link
+                href="#contact"
+                className="text-gray-600 hover:text-blue-600 transition-colors font-medium"
+              >
                 Contact
               </Link>
               <Link
@@ -115,19 +148,19 @@ export default function HomePage() {
             </p>
 
             <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link
-                href="/customer"
-                className="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center space-x-2"
+              <button
+                onClick={() => handlePortalClick('customer')}
+                className="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center space-x-2 cursor-pointer"
               >
                 <span>Track Your Order</span>
                 <ArrowRight size={20} />
-              </Link>
-              <Link
-                href="/admin"
-                className="bg-white text-blue-600 border-2 border-gray-300 px-8 py-3 rounded-lg text-lg font-semibold hover:bg-gray-100 transition-all duration-300 transform hover:scale-105"
+              </button>
+              <button
+                onClick={() => handlePortalClick('admin')}
+                className="bg-white text-blue-600 border-2 border-gray-300 px-8 py-3 rounded-lg text-lg font-semibold hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 cursor-pointer"
               >
                 Business Login
-              </Link>
+              </button>
             </div>
           </div>
         </section>
@@ -143,19 +176,30 @@ export default function HomePage() {
               {portalCards.map((card) => {
                 const colors = cardColors[card.color];
                 return (
-                  <Link href={card.href} key={card.title} className="group block">
-                    <div className={`p-8 rounded-xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col ${colors.bg}`}>
-                      <div className={`w-16 h-16 rounded-lg flex items-center justify-center mb-6 ${colors.iconBg}`}>
+                  <button
+                    key={card.title}
+                    onClick={() => handlePortalClick(card.portalType)}
+                    className="group block text-left hover:no-underline focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-xl"
+                  >
+                    <div
+                      className={`p-8 rounded-xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col ${colors.bg} cursor-pointer`}
+                    >
+                      <div
+                        className={`w-16 h-16 rounded-lg flex items-center justify-center mb-6 ${colors.iconBg}`}
+                      >
                         <card.icon className={colors.iconText} size={32} />
                       </div>
                       <h3 className="text-xl font-bold text-gray-900 mb-3">{card.title}</h3>
                       <p className="text-gray-600 mb-6 flex-grow">{card.description}</p>
                       <div className={`flex items-center font-semibold ${colors.linkText}`}>
                         <span>Access Portal</span>
-                        <ArrowRight className="ml-2 group-hover:translate-x-1.5 transition-transform" size={18} />
+                        <ArrowRight
+                          className="ml-2 group-hover:translate-x-1.5 transition-transform"
+                          size={18}
+                        />
                       </div>
                     </div>
-                  </Link>
+                  </button>
                 );
               })}
             </div>
@@ -166,12 +210,15 @@ export default function HomePage() {
         <section id="features" className="py-20 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
-              <h2 className="text-base font-semibold text-blue-600 tracking-wide uppercase">Features</h2>
+              <h2 className="text-base font-semibold text-blue-600 tracking-wide uppercase">
+                Features
+              </h2>
               <p className="mt-2 text-3xl font-extrabold text-gray-900 tracking-tight sm:text-4xl">
                 Everything You Need to Manage Your Laundry
               </p>
               <p className="mt-4 max-w-2xl mx-auto text-xl text-gray-500">
-                Powerful features designed to streamline operations and improve customer satisfaction.
+                Powerful features designed to streamline operations and improve customer
+                satisfaction.
               </p>
             </div>
 
@@ -186,7 +233,9 @@ export default function HomePage() {
                             <feature.icon className="h-6 w-6 text-white" aria-hidden="true" />
                           </span>
                         </div>
-                        <h3 className="mt-8 text-lg font-medium text-gray-900 tracking-tight">{feature.title}</h3>
+                        <h3 className="mt-8 text-lg font-medium text-gray-900 tracking-tight">
+                          {feature.title}
+                        </h3>
                         <p className="mt-5 text-base text-gray-500">{feature.description}</p>
                       </div>
                     </div>
@@ -227,6 +276,15 @@ export default function HomePage() {
           <p>&copy; {new Date().getFullYear()} M1G Laundry Systems. All rights reserved.</p>
         </div>
       </footer>
+
+      {/* Portal Authentication Modal */}
+      {selectedPortal && (
+        <PortalAuthModal
+          isOpen={isAuthModalOpen}
+          portalType={selectedPortal}
+          onClose={handleCloseAuthModal}
+        />
+      )}
     </div>
   );
 }

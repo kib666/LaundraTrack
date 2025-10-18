@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { Menu, Bell, User } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { Menu, Bell, User, Loader } from 'lucide-react';
 import Sidebar from '@/components/admin/Sidebar';
 
-const AdminTopBar = ({ title, onMenuToggle }) => {
+const AdminTopBar = ({ title, onMenuToggle, userName }) => {
     return (
         <div className="bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center">
             <div className="flex items-center">
@@ -16,7 +17,7 @@ const AdminTopBar = ({ title, onMenuToggle }) => {
             </div>
             <div className="flex items-center space-x-4">
                 <Bell className="text-gray-600 hover:text-gray-800 cursor-pointer" size={20} />
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center cursor-pointer" title={userName}>
                     <User className="text-white" size={16} />
                 </div>
             </div>
@@ -26,8 +27,33 @@ const AdminTopBar = ({ title, onMenuToggle }) => {
 
 
 export default function AdminLayout({ children }) {
+  const { data: session, status } = useSession();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
   const pathname = usePathname();
+
+  // Redirect if not authenticated or not admin
+  useEffect(() => {
+    // Wait for session to load
+    if (status === 'loading') {
+      setIsChecking(true);
+      return;
+    }
+
+    setIsChecking(false);
+
+    if (status === 'unauthenticated') {
+      window.location.href = '/customer?error=admin_access_required';
+    } else if (status === 'authenticated') {
+      // Double-check role is admin, wait a moment for session to fully load
+      setTimeout(() => {
+        if (!session?.user?.role || session.user.role !== 'admin') {
+          console.log('Access denied. User role:', session?.user?.role);
+          window.location.href = '/customer?error=unauthorized';
+        }
+      }, 100);
+    }
+  }, [status, session?.user?.role]);
 
   const getPageTitle = () => {
     if (pathname.startsWith('/admin/users')) return 'Users Management';
@@ -38,6 +64,25 @@ export default function AdminLayout({ children }) {
   };
 
   const pageTitle = getPageTitle();
+
+  // Show loading while checking authentication
+  if (isChecking || status === 'loading') {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader className="animate-spin" size={48} />
+      </div>
+    );
+  }
+
+  // Show nothing while redirecting (redirects are handled in useEffect)
+  if (status === 'unauthenticated') {
+    return null;
+  }
+
+  // If authenticated but not admin, the redirect will happen in useEffect
+  if (status === 'authenticated' && (!session?.user?.role || session.user.role !== 'admin')) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -56,7 +101,7 @@ export default function AdminLayout({ children }) {
             )}
 
             <div className="flex-1 flex flex-col overflow-y-auto">
-                <AdminTopBar title={pageTitle} onMenuToggle={() => setIsMobileMenuOpen(true)} />
+                <AdminTopBar title={pageTitle} onMenuToggle={() => setIsMobileMenuOpen(true)} userName={session?.user?.name} />
 
                 <main className="flex-1 p-6">
                     {children}

@@ -17,7 +17,10 @@ export async function GET(request) {
     // Check approval
     const approval = requireApproval(auth.user);
     if (approval.error) {
-      return Response.json({ success: false, message: approval.error }, { status: approval.status });
+      return Response.json(
+        { success: false, message: approval.error },
+        { status: approval.status }
+      );
     }
 
     const { searchParams } = new URL(request.url);
@@ -42,10 +45,46 @@ export async function GET(request) {
 
     const total = await Order.countDocuments(filter);
 
+    // Helper function to normalize status to uppercase for UI
+    const normalizeStatus = (status) => {
+      const statusMap = {
+        pending: 'PENDING',
+        confirmed: 'PENDING',
+        in_progress: 'IN_PROGRESS',
+        ready_for_pickup: 'COMPLETED',
+        picked_up: 'COMPLETED',
+        delivered: 'DELIVERED',
+        cancelled: 'CANCELLED',
+      };
+      return statusMap[status] || status.toUpperCase();
+    };
+
+    // Format response for consistency
+    const formattedOrders = orders.map((order) => ({
+      _id: order._id,
+      id: order._id,
+      trackingNumber: order.trackingNumber,
+      customerId: order.customerId,
+      staffId: order.staffId,
+      status: normalizeStatus(order.status),
+      dbStatus: order.status,
+      items: order.items,
+      totalAmount: order.totalAmount,
+      total: order.totalAmount,
+      pickupAddress: order.pickupAddress,
+      deliveryAddress: order.deliveryAddress,
+      deliveryDate: order.deliveryDate,
+      pickupDate: order.pickupDate,
+      serviceType: order.serviceType,
+      paymentStatus: order.paymentStatus,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+    }));
+
     return Response.json(
       {
         success: true,
-        orders,
+        orders: formattedOrders,
         pagination: {
           page,
           limit,
@@ -78,25 +117,30 @@ export async function POST(request) {
     // Check approval
     const approval = requireApproval(auth.user);
     if (approval.error) {
-      return Response.json({ success: false, message: approval.error }, { status: approval.status });
+      return Response.json(
+        { success: false, message: approval.error },
+        { status: approval.status }
+      );
     }
 
-    const { items, totalAmount, description, pickupAddress, deliveryAddress, pickupDate, deliveryDate, serviceType } =
-      await request.json();
+    const {
+      items,
+      totalAmount,
+      description,
+      pickupAddress,
+      deliveryAddress,
+      pickupDate,
+      deliveryDate,
+      serviceType,
+    } = await request.json();
 
     // Validation
     if (!items || !totalAmount || !pickupAddress || !deliveryAddress) {
-      return Response.json(
-        { success: false, message: 'Missing required fields' },
-        { status: 400 }
-      );
+      return Response.json({ success: false, message: 'Missing required fields' }, { status: 400 });
     }
 
     if (totalAmount <= 0) {
-      return Response.json(
-        { success: false, message: 'Invalid total amount' },
-        { status: 400 }
-      );
+      return Response.json({ success: false, message: 'Invalid total amount' }, { status: 400 });
     }
 
     // Create order

@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { Plus, Loader, CheckCircle } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 import OrdersTable from '@/components/admin/OrdersTable';
 import Modal from '@/components/common/Modal';
 import OrderForm from '@/components/admin/OrderForm';
 
 export default function OrdersPage() {
+  const { data: session, status } = useSession();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -15,16 +17,19 @@ export default function OrdersPage() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/orders');
-      
+      const headers = session?.user?.token ? { Authorization: `Bearer ${session.user.token}` } : {};
+
+      const response = await fetch('/api/orders', { headers });
+
       if (!response.ok) {
-        console.error('Failed to fetch orders:', await response.text());
+        console.error('Failed to fetch orders:', response.status);
         setOrders([]);
         return;
       }
-      
+
       const data = await response.json();
-      setOrders(Array.isArray(data) ? data : []);
+      const ordersList = data.orders || data;
+      setOrders(Array.isArray(ordersList) ? ordersList : []);
     } catch (error) {
       console.error('An error occurred while fetching orders:', error);
       setOrders([]);
@@ -34,28 +39,10 @@ export default function OrdersPage() {
   };
 
   useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  const handleStatusUpdate = async (orderId, newStatus) => {
-    try {
-      const response = await fetch(`/api/orders/${orderId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (response.ok) {
-        await fetchOrders();
-      } else {
-        console.error('Failed to update order status');
-      }
-    } catch (error) {
-      console.error('Error updating order status:', error);
+    if (session?.user?.token) {
+      fetchOrders();
     }
-  };
+  }, [session?.user?.token]);
 
   const handleDateUpdate = async (orderId, newEta) => {
     try {
@@ -63,17 +50,20 @@ export default function OrdersPage() {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.user?.token}`,
         },
-        body: JSON.stringify({ eta: newEta }),
+        body: JSON.stringify({ deliveryDate: newEta }),
       });
 
       if (response.ok) {
         await fetchOrders();
       } else {
-        console.error('Failed to update order ETA');
+        console.error('Failed to update order delivery date');
+        alert('Failed to update order delivery date');
       }
     } catch (error) {
-      console.error('Error updating order ETA:', error);
+      console.error('Error updating order delivery date:', error);
+      alert('Error updating order delivery date');
     }
   };
 
@@ -83,6 +73,7 @@ export default function OrdersPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.user?.token}`,
         },
         body: JSON.stringify(formData),
       });
@@ -90,13 +81,16 @@ export default function OrdersPage() {
       if (response.ok) {
         setIsModalOpen(false);
         setOrderSuccess(true);
+        setTimeout(() => setOrderSuccess(false), 3000);
         await fetchOrders();
       } else {
         const errorData = await response.json();
         console.error('Failed to create order:', errorData.error || response.statusText);
+        alert(`Error: ${errorData.message || 'Failed to create order'}`);
       }
     } catch (error) {
       console.error('Error creating order:', error);
+      alert('Error creating order');
     }
   };
 
@@ -111,16 +105,16 @@ export default function OrdersPage() {
   return (
     <>
       <div className="flex justify-end mb-4">
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 flex items-center space-x-2"
-          >
-            <Plus size={16} />
-            <span>Add Order</span>
-          </button>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 flex items-center space-x-2"
+        >
+          <Plus size={16} />
+          <span>Add Order</span>
+        </button>
       </div>
       <div className="bg-white rounded-lg shadow-sm border">
-        <OrdersTable orders={orders} onStatusUpdate={handleStatusUpdate} onDateUpdate={handleDateUpdate}/>
+        <OrdersTable orders={orders} onDateUpdate={handleDateUpdate} />
       </div>
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add New Order">
@@ -144,4 +138,4 @@ export default function OrdersPage() {
       )}
     </>
   );
-} 
+}
