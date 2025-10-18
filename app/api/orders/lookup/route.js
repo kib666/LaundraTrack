@@ -1,6 +1,9 @@
 import { connectDB } from '@/lib/db/mongodb';
 import { Order } from '@/lib/db/models';
 
+// Mark this route as dynamic since it always queries the database
+export const dynamic = 'force-dynamic';
+
 // GET - Lookup orders by phone number
 export async function GET(request) {
   try {

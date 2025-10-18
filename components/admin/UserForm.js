@@ -37,7 +37,8 @@ export default function UserForm({ user, onSubmit, onCancel }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log('UserForm: submitting form data', formData);
-    onSubmit(formData);
+    // Only admins can add users, and they can only create staff members
+    onSubmit({ ...formData, role: 'staff', password: 'DefaultPassword123' });
   };
 
   return (
@@ -87,6 +88,13 @@ export default function UserForm({ user, onSubmit, onCancel }) {
           className="w-full p-2 border rounded-lg text-gray-900"
           required
         />
+      </div>
+
+      <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+        <p className="text-sm text-blue-800">
+          <strong>Role:</strong> Staff (New staff members will be created with pending status and
+          require approval)
+        </p>
       </div>
 
       <div className="flex space-x-3 pt-2">

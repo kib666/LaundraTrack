@@ -12,6 +12,7 @@ import {
   Clipboard,
   TrendingUp,
   Loader,
+  X,
 } from 'lucide-react';
 import Sidebar from '@/components/staff/Sidebar';
 import StatusBadge from '@/components/common/StatusBadge';
@@ -605,10 +606,19 @@ export default function StaffPage() {
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
           <div
-            className="absolute inset-0 bg-black bg-opacity-50"
+            className="absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <div className="relative w-64 h-full bg-white">
+          <div className="absolute left-0 top-0 w-64 h-full bg-white shadow-lg transform transition-transform duration-300 ease-out">
+            <div className="p-4 border-b flex justify-between items-center md:hidden">
+              <h2 className="text-lg font-bold text-gray-800">Menu</h2>
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-gray-600 hover:text-gray-800"
+              >
+                <X size={24} />
+              </button>
+            </div>
             <Sidebar
               activeTab={activeTab}
               onTabChange={(tab) => {
