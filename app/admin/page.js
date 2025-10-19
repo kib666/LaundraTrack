@@ -51,6 +51,18 @@ const DashboardCard = ({ title, value, icon: IconComponent, color }) => (
   </div>
 );
 
+const getStatusDisplay = (status) => {
+  const statusMap = {
+    PENDING: { color: 'bg-yellow-100 text-yellow-800', text: 'Pending' },
+    IN_PROGRESS: { color: 'bg-blue-100 text-blue-800', text: 'In Progress' },
+    COMPLETED: { color: 'bg-green-100 text-green-800', text: 'Ready' },
+    DELIVERED: { color: 'bg-purple-100 text-purple-800', text: 'Delivered' },
+    CANCELLED: { color: 'bg-red-100 text-red-800', text: 'Cancelled' },
+    DELETED: { color: 'bg-gray-400 text-white', text: 'Deleted' },
+  };
+  return statusMap[status] || { color: 'bg-gray-100 text-gray-800', text: status };
+};
+
 const RecentOrdersTable = ({ orders }) => {
   return (
     <div className="bg-white rounded-lg shadow-sm border">
@@ -88,6 +100,7 @@ const RecentOrdersTable = ({ orders }) => {
               const orderId = order.trackingNumber || order.id || order._id;
               const pickupDate = order.pickupDate || order.createdAt;
               const etaDate = order.deliveryDate || order.eta;
+              const statusDisplay = getStatusDisplay(order.status);
 
               return (
                 <tr key={orderId} className="hover:bg-gray-50">
@@ -99,8 +112,10 @@ const RecentOrdersTable = ({ orders }) => {
                         'Walk-in Customer'}
                   </td>
                   <td className="px-4 py-3">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {order.status}
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusDisplay.color}`}
+                    >
+                      {statusDisplay.text}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">
@@ -433,6 +448,14 @@ export default function AdminDashboard() {
 
     console.log('[ADMIN] useEffect - Token available, calling fetchOrders');
     fetchOrders();
+
+    // Auto-refresh orders every 5 seconds for real-time updates
+    const POLL_INTERVAL_MS = 5000;
+    const pollingInterval = setInterval(() => {
+      fetchOrders();
+    }, POLL_INTERVAL_MS);
+
+    return () => clearInterval(pollingInterval);
   }, [fetchOrders, session?.user?.token]);
 
   const handleCreateOrder = async (formData) => {

@@ -41,6 +41,14 @@ export default function OrdersPage() {
   useEffect(() => {
     if (session?.user?.token) {
       fetchOrders();
+
+      // Auto-refresh orders every 5 seconds for real-time updates
+      const POLL_INTERVAL_MS = 5000;
+      const pollingInterval = setInterval(() => {
+        fetchOrders();
+      }, POLL_INTERVAL_MS);
+
+      return () => clearInterval(pollingInterval);
     }
   }, [fetchOrders, session?.user?.token]);
 

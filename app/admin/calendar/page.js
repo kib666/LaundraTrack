@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { Loader } from 'lucide-react';
 import OrderCalendarView from '@/components/admin/OrderCalendarView';
@@ -9,6 +9,7 @@ export default function CalendarPage() {
   const { data: session } = useSession();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const pollerRef = useRef(null);
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -39,6 +40,26 @@ export default function CalendarPage() {
     }
 
     fetchOrders();
+  }, [fetchOrders, session?.user?.token]);
+
+  // Auto-polling for calendar updates
+  useEffect(() => {
+    if (!session?.user?.token) {
+      return;
+    }
+
+    const POLL_INTERVAL_MS = 5000;
+
+    pollerRef.current = setInterval(() => {
+      fetchOrders();
+    }, POLL_INTERVAL_MS);
+
+    return () => {
+      if (pollerRef.current) {
+        clearInterval(pollerRef.current);
+        pollerRef.current = null;
+      }
+    };
   }, [fetchOrders, session?.user?.token]);
 
   if (loading) {

@@ -1,6 +1,19 @@
 import React, { useState } from 'react';
 import { Search, Calendar } from 'lucide-react';
 
+// Status display mapping for consistency with staff page
+const getStatusDisplay = (status) => {
+  const statusMap = {
+    PENDING: { color: 'bg-yellow-100 text-yellow-800', text: 'Pending' },
+    IN_PROGRESS: { color: 'bg-blue-100 text-blue-800', text: 'In Progress' },
+    COMPLETED: { color: 'bg-green-100 text-green-800', text: 'Ready' },
+    DELIVERED: { color: 'bg-purple-100 text-purple-800', text: 'Delivered' },
+    CANCELLED: { color: 'bg-red-100 text-red-800', text: 'Cancelled' },
+    DELETED: { color: 'bg-gray-400 text-white', text: 'Deleted' },
+  };
+  return statusMap[status] || { color: 'bg-gray-100 text-gray-800', text: status };
+};
+
 // New EditableDate component
 const EditableDate = ({ order, onDateUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -142,9 +155,16 @@ const OrdersTable = ({ orders, onDateUpdate }) => {
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{weight} kg</td>
                   <td className="px-4 py-4 whitespace-nowrap">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                      {order.status}
-                    </span>
+                    {(() => {
+                      const statusDisplay = getStatusDisplay(order.status);
+                      return (
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${statusDisplay.color}`}
+                        >
+                          {statusDisplay.text}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
                     <EditableDate order={order} onDateUpdate={onDateUpdate} />

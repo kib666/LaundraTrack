@@ -11,6 +11,18 @@ import interactionPlugin from '@fullcalendar/interaction';
 
 const FullCalendar = dynamic(() => import('@fullcalendar/react'), { ssr: false });
 
+const getStatusDisplay = (status) => {
+  const mappings = {
+    PENDING: { text: 'Pending', color: 'bg-yellow-500' },
+    IN_PROGRESS: { text: 'In Progress', color: 'bg-blue-500' },
+    COMPLETED: { text: 'Ready', color: 'bg-green-500' },
+    DELIVERED: { text: 'Delivered', color: 'bg-purple-500' },
+    CANCELLED: { text: 'Cancelled', color: 'bg-red-500' },
+    DELETED: { text: 'Deleted', color: 'bg-gray-500' },
+  };
+  return mappings[status] || { text: status, color: 'bg-gray-500' };
+};
+
 const buildEvents = (orders, filterStart, filterEnd) => {
   return orders.flatMap((order) => {
     const pickup = order.pickupDate;
@@ -211,14 +223,15 @@ export default function OrderCalendarView({ orders }) {
             </div>
           )}
           eventTimeFormat={{ hour: 'numeric', minute: '2-digit' }}
-          eventClassNames={(arg) =>
-            arg.event.extendedProps.type === 'delivery'
-              ? 'bg-green-500 border-none'
-              : 'bg-blue-500 border-none'
-          }
+          eventClassNames={(arg) => {
+            const statusDisplay = getStatusDisplay(arg.event.extendedProps.status);
+            return `${statusDisplay.color} border-none`;
+          }}
           eventContent={(eventInfo) => {
             const { event } = eventInfo;
             const type = event.extendedProps.type;
+            const status = event.extendedProps.status;
+            const statusDisplay = getStatusDisplay(status);
             const IconComponent = type === 'delivery' ? Truck : Package;
             const isDueToday = isToday(event.start);
 
@@ -227,7 +240,10 @@ export default function OrderCalendarView({ orders }) {
                 <IconComponent size={12} />
                 <span className="truncate">{event.title}</span>
                 {isDueToday && (
-                  <span className="text-[10px] bg-white text-blue-600 px-1 py-px rounded">
+                  <span
+                    className="text-[10px] bg-white px-1 py-px rounded"
+                    style={{ color: statusDisplay.color.replace('bg-', '') }}
+                  >
                     Today
                   </span>
                 )}
