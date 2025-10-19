@@ -15,7 +15,6 @@ import {
   MapPin,
   Clock,
   CheckCircle,
-  Sparkles,
 } from 'lucide-react';
 import PortalAuthModal from '@/components/common/PortalAuthModal';
 
@@ -173,14 +172,14 @@ export default function HomePage() {
             {/* Subtitle */}
 
             {/* Main Heading */}
-            <h5 className="text-5xl md:text-7xl font-extrabold text-gray-900 leading-tight mb-6">
+            <h1 className="text-5xl md:text-7xl font-extrabold text-gray-900 leading-tight mb-6">
               <span className="bg-gradient-to-r from-gray-900 via-blue-900 to-gray-900 bg-clip-text text-transparent">
                 Professional Laundry
               </span>
               <span className="block mt-3 bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 bg-clip-text text-transparent">
                 Management System
               </span>
-            </h5>
+            </h1>
 
             <p className="mt-6 text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
               Streamline your laundry business with our comprehensive tracking and management
