@@ -2,18 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
-import {
-  Clock,
-  Package,
-  Truck,
-  Bell,
-  Menu,
-  Clipboard,
-  TrendingUp,
-  Loader,
-  X,
-  Calendar,
-} from 'lucide-react';
+import { Clock, Package, Truck, Bell, Menu, Clipboard, TrendingUp, Loader, X } from 'lucide-react';
 import Sidebar from '@/components/staff/Sidebar';
 import StatusBadge from '@/components/common/StatusBadge';
 import OrderCalendarView from '@/components/admin/OrderCalendarView';

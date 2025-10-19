@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Loader, CheckCircle } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import OrdersTable from '@/components/admin/OrdersTable';
@@ -14,7 +14,7 @@ export default function OrdersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
       const headers = session?.user?.token ? { Authorization: `Bearer ${session.user.token}` } : {};
@@ -36,13 +36,13 @@ export default function OrdersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [session?.user?.token]);
 
   useEffect(() => {
     if (session?.user?.token) {
       fetchOrders();
     }
-  }, [session?.user?.token]);
+  }, [fetchOrders, session?.user?.token]);
 
   const handleDateUpdate = async (orderId, newEta) => {
     try {

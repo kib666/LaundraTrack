@@ -161,7 +161,6 @@ export async function PATCH(request, { params }) {
       // Allow customers to cancel only if order is pending or confirmed
       if (updates.status === 'cancelled') {
         if (order.status === 'pending' || order.status === 'confirmed') {
-          const previousStatus = order.status;
           order.status = 'cancelled';
           order.cancelledAt = new Date();
           order.cancelledBy = auth.user.id;

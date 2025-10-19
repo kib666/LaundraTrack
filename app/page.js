@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState } from 'react';
 import {
   Box,
@@ -158,10 +159,13 @@ export default function HomePage() {
             <div className="flex justify-center mb-8 animate-fade-in">
               <div className="relative group">
                 <div className="absolute -inset-4 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full opacity-20 blur-2xl group-hover:opacity-30 transition-opacity"></div>
-                <img
+                <Image
                   src="/images/laundra-track-logo.png"
                   alt="LaundraTrack Logo"
-                  className="relative w-96 md:w-[500px] h-auto drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-300"
+                  width={500}
+                  height={300}
+                  className="relative drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-300"
+                  priority
                 />
               </div>
             </div>

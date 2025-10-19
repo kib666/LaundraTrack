@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit, Trash2, Loader, AlertTriangle, Lock } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import Modal from '@/components/common/Modal';
@@ -22,7 +22,7 @@ export default function UsersManagementPage() {
     }
   }, [status]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch('/api/admin/users', {
@@ -48,13 +48,13 @@ export default function UsersManagementPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [session?.user?.token]);
 
   useEffect(() => {
     if (session?.user?.token) {
       fetchUsers();
     }
-  }, [session?.user?.token]);
+  }, [fetchUsers, session?.user?.token]);
 
   const handleFormSubmit = async (userData) => {
     const isEditing = !!selectedUser;

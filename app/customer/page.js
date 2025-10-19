@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import {
   Package,
@@ -11,7 +11,6 @@ import {
   Loader,
   LogIn,
   UserPlus,
-  LogOut,
   History,
   PlusCircle,
   Shield,
@@ -108,7 +107,7 @@ const OrderDetails = ({ orders, onBack, onCancel, onOrderUpdate }) => {
 
   const handleEditSave = (updatedOrder) => {
     // Update the order in the list
-    onOrderUpdate && onOrderUpdate(updatedOrder);
+    if (onOrderUpdate) onOrderUpdate(updatedOrder);
   };
 
   const handleUndoCancel = async (orderId) => {
@@ -126,7 +125,7 @@ const OrderDetails = ({ orders, onBack, onCancel, onOrderUpdate }) => {
       }
 
       // Update the order
-      onOrderUpdate && onOrderUpdate(data.order);
+      if (onOrderUpdate) onOrderUpdate(data.order);
     } catch (error) {
       alert('Error undoing cancellation: ' + error.message);
     } finally {
@@ -507,6 +506,34 @@ const AuthForm = ({ isRegister = false }) => {
   );
 };
 
+// Pricing structure and options - moved outside component to avoid recreation
+const PRICING_STRUCTURE = {
+  8: {
+    wash: 60,
+    dry: 60,
+    fold: 25,
+  },
+  12: {
+    wash: 75,
+    dry: 75,
+    fold: 30,
+  },
+};
+
+const INCLUSION_PRICES = {
+  liquidDetergent: 20,
+  downy: 10,
+  plastic: 5,
+};
+
+const SERVICE_OPTIONS = [
+  { value: 'wash', label: 'Wash' },
+  { value: 'washAndDry', label: 'Wash and Dry' },
+  { value: 'fullService', label: 'Full Service (Wash, Dry, and Fold)' },
+];
+
+const WEIGHT_OPTIONS = [8, 12];
+
 const NewOrderForm = ({ onOrderCreated }) => {
   const { data: session } = useSession();
   const [weight, setWeight] = useState('');
@@ -526,34 +553,6 @@ const NewOrderForm = ({ onOrderCreated }) => {
     plastic: 0,
   });
 
-  // Pricing structure
-  const pricingStructure = {
-    8: {
-      wash: 60,
-      dry: 60,
-      fold: 25,
-    },
-    12: {
-      wash: 75,
-      dry: 75,
-      fold: 30,
-    },
-  };
-
-  const inclusionPrices = {
-    liquidDetergent: 20,
-    downy: 10,
-    plastic: 5,
-  };
-
-  const serviceOptions = [
-    { value: 'wash', label: 'Wash' },
-    { value: 'washAndDry', label: 'Wash and Dry' },
-    { value: 'fullService', label: 'Full Service (Wash, Dry, and Fold)' },
-  ];
-
-  const weightOptions = [8, 12];
-
   // Calculate total price
   useEffect(() => {
     const calculatePrice = () => {
@@ -563,7 +562,7 @@ const NewOrderForm = ({ onOrderCreated }) => {
       }
 
       const w = parseInt(weight);
-      const pricing = pricingStructure[w];
+      const pricing = PRICING_STRUCTURE[w];
 
       if (!pricing) {
         setEstimatedPrice(0);
@@ -582,9 +581,9 @@ const NewOrderForm = ({ onOrderCreated }) => {
 
       // Add inclusions cost
       const inclusionsCost =
-        inclusions.liquidDetergent * inclusionPrices.liquidDetergent +
-        inclusions.downy * inclusionPrices.downy +
-        inclusions.plastic * inclusionPrices.plastic;
+        inclusions.liquidDetergent * INCLUSION_PRICES.liquidDetergent +
+        inclusions.downy * INCLUSION_PRICES.downy +
+        inclusions.plastic * INCLUSION_PRICES.plastic;
 
       // Add delivery fee if delivery is selected
       const deliveryFee = fulfillmentType === 'delivery' ? 20 : 0;
@@ -632,8 +631,6 @@ const NewOrderForm = ({ onOrderCreated }) => {
         throw new Error('Delivery address is required for delivery orders.');
       }
 
-      const w = parseInt(weight);
-      const pricing = pricingStructure[w];
       const serviceName = serviceOptions.find((s) => s.value === serviceType)?.label;
 
       // Build items array
@@ -725,7 +722,7 @@ const NewOrderForm = ({ onOrderCreated }) => {
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-3">Service Type</label>
           <div className="space-y-2">
-            {serviceOptions.map((option) => (
+            {SERVICE_OPTIONS.map((option) => (
               <label
                 key={option.value}
                 className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
@@ -749,7 +746,7 @@ const NewOrderForm = ({ onOrderCreated }) => {
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-3">Weight (kg)</label>
           <div className="flex gap-3">
-            {weightOptions.map((w) => (
+            {WEIGHT_OPTIONS.map((w) => (
               <button
                 key={w}
                 type="button"
@@ -1059,7 +1056,7 @@ const LoggedInDashboard = ({ user }) => {
   const [mutatingOrderId, setMutatingOrderId] = useState(null);
   const [deliveryModal, setDeliveryModal] = useState({ isOpen: false, orderId: null, address: '' });
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     if (!session?.user?.token) {
       setOrders([]);
       setDeliveryUpdates({});
@@ -1106,7 +1103,7 @@ const LoggedInDashboard = ({ user }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [session?.user?.token, user.id]);
 
   const handleCancelOrder = async (orderId, orderStatus) => {
     if (orderStatus !== 'PENDING') {
@@ -1292,7 +1289,7 @@ const LoggedInDashboard = ({ user }) => {
         channel.close();
       }
     };
-  }, [user.id]);
+  }, [fetchOrders]);
 
   return (
     <div className="min-h-screen bg-gray-50">
