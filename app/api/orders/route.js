@@ -80,6 +80,9 @@ export async function GET(request) {
       preferredDate: order.preferredDate,
       serviceType: order.serviceType,
       fulfillmentType: order.fulfillmentType || 'pickup',
+      weight: order.weight,
+      preferredTime: order.preferredTime,
+      submittedAt: order.submittedAt,
       paymentStatus: order.paymentStatus,
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
@@ -129,6 +132,9 @@ export async function POST(request) {
       }
     }
 
+    const requestData = await request.json();
+    console.log('Order creation request data:', requestData);
+
     const {
       items,
       totalAmount,
@@ -136,10 +142,11 @@ export async function POST(request) {
       pickupAddress,
       deliveryAddress,
       preferredDate,
+      preferredTime,
       fulfillmentType = 'pickup',
       weight,
       serviceType,
-    } = await request.json();
+    } = requestData;
 
     if (
       !items ||
@@ -149,7 +156,22 @@ export async function POST(request) {
       !preferredDate ||
       typeof weight === 'undefined'
     ) {
-      return Response.json({ success: false, message: 'Missing required fields' }, { status: 400 });
+      const missingFields = [];
+      if (!items || !items.length) missingFields.push('items');
+      if (!totalAmount) missingFields.push('totalAmount');
+      if (!serviceType) missingFields.push('serviceType');
+      if (!preferredDate) missingFields.push('preferredDate');
+      if (typeof weight === 'undefined') missingFields.push('weight');
+
+      console.error('Missing required fields:', missingFields);
+      return Response.json(
+        {
+          success: false,
+          message: `Missing required fields: ${missingFields.join(', ')}`,
+          receivedData: { items, totalAmount, serviceType, preferredDate, weight },
+        },
+        { status: 400 }
+      );
     }
 
     if (totalAmount <= 0 || Number.isNaN(Number(weight)) || Number(weight) <= 0) {
@@ -187,6 +209,7 @@ export async function POST(request) {
           : pickupAddress?.trim() || 'Customer Drop-off',
       deliveryAddress: fulfillmentType === 'delivery' ? deliveryAddress?.trim() : null,
       preferredDate: normalizedPreferredDate,
+      preferredTime,
       pickupDate: fulfillmentType === 'pickup' ? normalizedPreferredDate : null,
       deliveryDate: fulfillmentType === 'delivery' ? normalizedPreferredDate : null,
       fulfillmentType,

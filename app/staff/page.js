@@ -6,19 +6,22 @@ import {
   Clock,
   Package,
   Truck,
-  User,
   Bell,
   Menu,
   Clipboard,
   TrendingUp,
   Loader,
   X,
+  Calendar,
 } from 'lucide-react';
 import Sidebar from '@/components/staff/Sidebar';
 import StatusBadge from '@/components/common/StatusBadge';
 import OrderCalendarView from '@/components/admin/OrderCalendarView';
+import OrderCardMenu from '@/components/staff/OrderCardMenu';
+import UserProfileDropdown from '@/components/common/UserProfileDropdown';
+import { formatManilaTime, formatManilaDate } from '@/lib/formatters';
 
-const StaffTopBar = ({ title, onMenuToggle, staffName }) => {
+const StaffTopBar = ({ title, onMenuToggle }) => {
   return (
     <div className="bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center">
       <div className="flex items-center">
@@ -30,14 +33,9 @@ const StaffTopBar = ({ title, onMenuToggle, staffName }) => {
         </button>
         <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
       </div>
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-6">
         <Bell className="text-gray-600 hover:text-gray-800 cursor-pointer" size={20} />
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-            <User className="text-white" size={16} />
-          </div>
-          <span className="text-sm font-medium text-gray-800">{staffName || 'Staff Member'}</span>
-        </div>
+        <UserProfileDropdown />
       </div>
     </div>
   );
@@ -113,7 +111,7 @@ const StaffStats = ({ orders }) => {
 };
 
 // Order Card Component
-const OrderCard = ({ order, onStatusUpdate, onCancel }) => {
+const OrderCard = ({ order, onStatusUpdate, onCancel, onDelete, onRevert }) => {
   const getNextAction = (dbStatus, fulfillmentType) => {
     const isDelivery = (fulfillmentType || 'pickup') === 'delivery';
 
@@ -163,33 +161,67 @@ const OrderCard = ({ order, onStatusUpdate, onCancel }) => {
 
   return (
     <div className="bg-white rounded-lg shadow-sm border p-4 hover:shadow-md transition-shadow flex flex-col justify-between">
-      <div>
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900">{customerName}</h3>
-            <p className="text-xs text-gray-500">{customerPhone}</p>
+      <div className="flex justify-between items-start gap-2">
+        <div className="flex-1">
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-900">{customerName}</h3>
+              <p className="text-xs text-gray-500">{customerPhone}</p>
+            </div>
+            <StatusBadge status={order.status} />
           </div>
-          <StatusBadge status={order.status} />
-        </div>
-        <div className="text-sm space-y-2 text-gray-700">
-          <p>
-            <span className="font-medium">Tracking:</span>{' '}
-            <span className="font-mono text-xs">{order.trackingNumber}</span>
-          </p>
-          <p>
-            <span className="font-medium">Items:</span> {itemsCount}
-          </p>
-          <p>
-            <span className="font-medium">Service:</span> {order.serviceType || 'wash'}
-          </p>
-          {isDelivery && order.deliveryAddress && (
+          <div className="text-sm space-y-2 text-gray-700">
             <p>
-              <span className="font-medium">Address:</span>{' '}
-              <span className="text-xs">{order.deliveryAddress}</span>
+              <span className="font-medium">Tracking:</span>{' '}
+              <span className="font-mono text-xs">{order.trackingNumber}</span>
             </p>
-          )}
-          <p className="text-lg font-bold">₱{(order.totalAmount || 0).toFixed(2)}</p>
+            <p>
+              <span className="font-medium">Items:</span> {itemsCount}
+            </p>
+            <p>
+              <span className="font-medium">Service:</span> {order.serviceType || 'wash'}
+            </p>
+
+            {/* Order Submission Time */}
+            {order.submittedAt && (
+              <div className="bg-blue-50 border-l-2 border-blue-400 px-2 py-1 rounded">
+                <p className="text-xs font-semibold text-blue-700 uppercase">Order Placed</p>
+                <p className="font-medium text-gray-900">{formatManilaTime(order.submittedAt)}</p>
+              </div>
+            )}
+
+            {/* Preferred Delivery Date & Time */}
+            {(order.preferredDate || order.preferredTime) && (
+              <div className="bg-green-50 border-l-2 border-green-400 px-2 py-1 rounded">
+                <p className="text-xs font-semibold text-green-700 uppercase">Preferred Delivery</p>
+                <div className="space-y-1">
+                  {order.preferredDate && (
+                    <p className="font-medium text-gray-900">
+                      📅 {formatManilaDate(order.preferredDate)}
+                    </p>
+                  )}
+                  {order.preferredTime && (
+                    <p className="font-medium text-green-700">⏰ {order.preferredTime}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {isDelivery && order.deliveryAddress && (
+              <p>
+                <span className="font-medium">Address:</span>{' '}
+                <span className="text-xs">{order.deliveryAddress}</span>
+              </p>
+            )}
+            <p className="text-lg font-bold">₱{(order.totalAmount || 0).toFixed(2)}</p>
+          </div>
         </div>
+        <OrderCardMenu
+          orderId={order._id}
+          orderStatus={order.dbStatus}
+          onDelete={onDelete}
+          onRevert={onRevert}
+        />
       </div>
       <div className="space-y-2 mt-4">
         {nextAction && (
@@ -214,7 +246,7 @@ const OrderCard = ({ order, onStatusUpdate, onCancel }) => {
 };
 
 // Order List View - Updated to include a "Delivered" section
-const OrderListView = ({ orders, onStatusUpdate, onCancel }) => {
+const OrderListView = ({ orders, onStatusUpdate, onCancel, onDelete, onRevert }) => {
   const groupedOrders = {
     pending: orders.filter(
       (order) => order.dbStatus === 'pending' || order.dbStatus === 'confirmed'
@@ -255,6 +287,8 @@ const OrderListView = ({ orders, onStatusUpdate, onCancel }) => {
                   order={order}
                   onStatusUpdate={onStatusUpdate}
                   onCancel={onCancel}
+                  onDelete={onDelete}
+                  onRevert={onRevert}
                 />
               ))}
             </div>
@@ -545,6 +579,18 @@ export default function StaffPage() {
     }
   };
 
+  const handleDeleteOrder = (orderId) => {
+    // Remove deleted order from state
+    setOrders((prevOrders) => prevOrders.filter((order) => order._id !== orderId));
+  };
+
+  const handleRevertStatus = (orderId, updatedOrder) => {
+    // Update the order with reverted status
+    setOrders((prevOrders) =>
+      prevOrders.map((order) => (order._id === orderId ? updatedOrder : order))
+    );
+  };
+
   const pageTitle = {
     tasks: 'My Tasks',
     calendar: 'Calendar',
@@ -569,6 +615,8 @@ export default function StaffPage() {
               orders={orders}
               onStatusUpdate={handleStatusUpdate}
               onCancel={handleCancelOrder}
+              onDelete={handleDeleteOrder}
+              onRevert={handleRevertStatus}
             />
           </>
         );
@@ -639,7 +687,6 @@ export default function StaffPage() {
         <StaffTopBar
           title={pageTitle}
           onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          staffName={session?.user?.name || session?.user?.firstName}
         />
         <main className="flex-1 p-6">{renderContent()}</main>
       </div>

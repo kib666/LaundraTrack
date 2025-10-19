@@ -89,6 +89,7 @@ const PortalAuthModal = ({ isOpen, portalType, onClose }) => {
         redirect: false,
         email,
         password,
+        portalType, // Pass portal type for role validation
       });
 
       if (result?.error) {

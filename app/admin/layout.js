@@ -3,10 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { Menu, Bell, User, Loader, X } from 'lucide-react';
+import { Menu, Bell, Loader, X } from 'lucide-react';
 import Sidebar from '@/components/admin/Sidebar';
+import UserProfileDropdown from '@/components/common/UserProfileDropdown';
 
-const AdminTopBar = ({ title, onMenuToggle, userName }) => {
+const AdminTopBar = ({ title, onMenuToggle }) => {
   return (
     <div className="bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center">
       <div className="flex items-center">
@@ -20,12 +21,7 @@ const AdminTopBar = ({ title, onMenuToggle, userName }) => {
       </div>
       <div className="flex items-center space-x-4">
         <Bell className="text-gray-600 hover:text-gray-800 cursor-pointer" size={20} />
-        <div
-          className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center cursor-pointer"
-          title={userName}
-        >
-          <User className="text-white" size={16} />
-        </div>
+        <UserProfileDropdown />
       </div>
     </div>
   );
@@ -123,7 +119,6 @@ export default function AdminLayout({ children }) {
           <AdminTopBar
             title={pageTitle}
             onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            userName={session?.user?.name}
           />
 
           <main className="flex-1 p-6">{children}</main>

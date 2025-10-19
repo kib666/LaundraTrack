@@ -110,6 +110,9 @@ const OrdersTable = ({ orders, onDateUpdate }) => {
                 Delivery Date
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Preferred Time
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Total
               </th>
             </tr>
@@ -145,6 +148,9 @@ const OrdersTable = ({ orders, onDateUpdate }) => {
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
                     <EditableDate order={order} onDateUpdate={onDateUpdate} />
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {order.preferredTime || 'Not set'}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     ₱{(order.totalAmount || 0).toFixed(2)}

@@ -6,6 +6,7 @@ import {
   Package,
   Truck,
   CalendarDays,
+  Clock,
   X,
   Loader,
   LogIn,
@@ -16,9 +17,14 @@ import {
   Shield,
   Users,
   User as UserIcon,
+  Edit,
+  RotateCcw,
 } from 'lucide-react';
 import StatusProgressTracker from '@/components/customer/StatusProgressTracker';
 import StatusBadge from '@/components/common/StatusBadge';
+import EditOrderModal from '@/components/customer/EditOrderModal';
+import UserProfileDropdown from '@/components/common/UserProfileDropdown';
+import OrderTimestampDisplay from '@/components/common/OrderTimestampDisplay';
 
 const broadcastOrderUpdate = () => {
   if (typeof window === 'undefined' || !('BroadcastChannel' in window)) {
@@ -70,8 +76,11 @@ const OrderLookupForm = ({ onLookup, isLoading }) => {
   );
 };
 
-const OrderDetails = ({ orders, onBack, onCancel }) => {
+const OrderDetails = ({ orders, onBack, onCancel, onOrderUpdate }) => {
   const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedOrderForEdit, setSelectedOrderForEdit] = useState(null);
+  const [undoLoading, setUndoLoading] = useState(null);
 
   // Handle single order or array of orders
   const orderList = Array.isArray(orders) ? orders : [orders];
@@ -80,6 +89,49 @@ const OrderDetails = ({ orders, onBack, onCancel }) => {
   const canCancelOrder = (status) => {
     // Can only cancel if status is PENDING
     return status === 'PENDING';
+  };
+
+  const canEditOrder = (status) => {
+    // Can edit if status is PENDING or CONFIRMED
+    return status === 'PENDING' || status === 'CONFIRMED';
+  };
+
+  const canUndoCancel = (status) => {
+    // Can undo if status is CANCELLED
+    return status === 'CANCELLED';
+  };
+
+  const handleEditClick = (order) => {
+    setSelectedOrderForEdit(order);
+    setEditModalOpen(true);
+  };
+
+  const handleEditSave = (updatedOrder) => {
+    // Update the order in the list
+    onOrderUpdate && onOrderUpdate(updatedOrder);
+  };
+
+  const handleUndoCancel = async (orderId) => {
+    setUndoLoading(orderId);
+    try {
+      const response = await fetch(`/api/orders/${orderId}/undo-cancel`, {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.message || 'Failed to undo cancellation');
+        return;
+      }
+
+      // Update the order
+      onOrderUpdate && onOrderUpdate(data.order);
+    } catch (error) {
+      alert('Error undoing cancellation: ' + error.message);
+    } finally {
+      setUndoLoading(null);
+    }
   };
 
   return (
@@ -141,6 +193,30 @@ const OrderDetails = ({ orders, onBack, onCancel }) => {
                     })}
                   </span>
                 </div>
+                {order.submittedAt && (
+                  <div className="flex items-center text-sm text-gray-700">
+                    <Clock size={16} className="mr-2 text-gray-500 flex-shrink-0" />
+                    <span>
+                      Submitted:{' '}
+                      {new Date(order.submittedAt).toLocaleString('en-US', {
+                        timeZone: 'Asia/Manila',
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: true,
+                      })}
+                    </span>
+                  </div>
+                )}
+                {order.preferredTime && (
+                  <div className="flex items-center text-sm text-gray-700">
+                    <Clock size={16} className="mr-2 text-gray-500 flex-shrink-0" />
+                    <span>Preferred: {order.preferredTime}</span>
+                  </div>
+                )}
               </div>
             </button>
 
@@ -160,17 +236,51 @@ const OrderDetails = ({ orders, onBack, onCancel }) => {
                     })}
                   </p>
                 </StatusProgressTracker>
-                {canCancelOrder(order.status) && (
-                  <div className="pt-4 border-t">
-                    <button
-                      onClick={() => onCancel && onCancel(order.id, order.status)}
-                      className="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                    >
-                      Cancel Order
-                    </button>
-                    <p className="text-xs text-gray-500 mt-2 text-center">
-                      Once the order is in progress, it cannot be cancelled.
-                    </p>
+                {(canEditOrder(order.status) ||
+                  canCancelOrder(order.status) ||
+                  canUndoCancel(order.status)) && (
+                  <div className="pt-4 border-t space-y-2">
+                    {canEditOrder(order.status) && (
+                      <button
+                        onClick={() => handleEditClick(order)}
+                        className="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Edit size={16} />
+                        Edit Order Details
+                      </button>
+                    )}
+                    {canCancelOrder(order.status) && (
+                      <button
+                        onClick={() => onCancel && onCancel(order.id, order.status)}
+                        className="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                      >
+                        Cancel Order
+                      </button>
+                    )}
+                    {canUndoCancel(order.status) && (
+                      <button
+                        onClick={() => handleUndoCancel(order.id)}
+                        disabled={undoLoading === order.id}
+                        className="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:bg-green-300 flex items-center justify-center gap-2"
+                      >
+                        {undoLoading === order.id ? (
+                          <>
+                            <Loader size={16} className="animate-spin" />
+                            Restoring...
+                          </>
+                        ) : (
+                          <>
+                            <RotateCcw size={16} />
+                            Restore Order
+                          </>
+                        )}
+                      </button>
+                    )}
+                    {canCancelOrder(order.status) && (
+                      <p className="text-xs text-gray-500 mt-2 text-center">
+                        Once the order is in progress, it cannot be cancelled.
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
@@ -178,6 +288,18 @@ const OrderDetails = ({ orders, onBack, onCancel }) => {
           </div>
         ))}
       </div>
+
+      {selectedOrderForEdit && (
+        <EditOrderModal
+          order={selectedOrderForEdit}
+          isOpen={editModalOpen}
+          onClose={() => {
+            setEditModalOpen(false);
+            setSelectedOrderForEdit(null);
+          }}
+          onSave={handleEditSave}
+        />
+      )}
     </div>
   );
 };
@@ -388,43 +510,97 @@ const AuthForm = ({ isRegister = false }) => {
 const NewOrderForm = ({ onOrderCreated }) => {
   const { data: session } = useSession();
   const [weight, setWeight] = useState('');
-  const [service, setService] = useState('Wash & Fold');
+  const [serviceType, setServiceType] = useState('wash');
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [fulfillmentType, setFulfillmentType] = useState('pickup');
   const [preferredDate, setPreferredDate] = useState('');
+  const [preferredTime, setPreferredTime] = useState('Morning');
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [estimatedPrice, setEstimatedPrice] = useState(0);
+  const [isAddOnsOpen, setIsAddOnsOpen] = useState(false);
+  const [inclusions, setInclusions] = useState({
+    liquidDetergent: 0,
+    downy: 0,
+    plastic: 0,
+  });
+
+  // Pricing structure
+  const pricingStructure = {
+    8: {
+      wash: 60,
+      dry: 60,
+      fold: 25,
+    },
+    12: {
+      wash: 75,
+      dry: 75,
+      fold: 30,
+    },
+  };
+
+  const inclusionPrices = {
+    liquidDetergent: 20,
+    downy: 10,
+    plastic: 5,
+  };
 
   const serviceOptions = [
-    { name: 'Wash & Fold', price: 40, unit: 'kg', type: 'wash' },
-    { name: 'Dry Cleaning', price: 150, unit: 'item', type: 'dry-clean' },
-    { name: 'Wash & Iron', price: 80, unit: 'kg', type: 'iron' },
-    { name: 'Express Service', price: 100, unit: 'add-on', type: 'combo' },
+    { value: 'wash', label: 'Wash' },
+    { value: 'washAndDry', label: 'Wash and Dry' },
+    { value: 'fullService', label: 'Full Service (Wash, Dry, and Fold)' },
   ];
 
+  const weightOptions = [8, 12];
+
+  // Calculate total price
   useEffect(() => {
     const calculatePrice = () => {
-      if (!weight) {
+      if (!weight || !serviceType) {
         setEstimatedPrice(0);
         return;
       }
 
-      const selectedService = serviceOptions.find((s) => s.name === service);
-      if (!selectedService) return;
+      const w = parseInt(weight);
+      const pricing = pricingStructure[w];
 
-      let price = parseFloat(weight) * selectedService.price;
-
-      if (service === 'Express Service') {
-        const baseService = serviceOptions.find((s) => s.name === 'Wash & Fold');
-        price = parseFloat(weight) * baseService.price + selectedService.price;
+      if (!pricing) {
+        setEstimatedPrice(0);
+        return;
       }
 
-      setEstimatedPrice(price);
+      let servicePrice = 0;
+
+      if (serviceType === 'wash') {
+        servicePrice = pricing.wash;
+      } else if (serviceType === 'washAndDry') {
+        servicePrice = pricing.wash + pricing.dry;
+      } else if (serviceType === 'fullService') {
+        servicePrice = pricing.wash + pricing.dry + pricing.fold;
+      }
+
+      // Add inclusions cost
+      const inclusionsCost =
+        inclusions.liquidDetergent * inclusionPrices.liquidDetergent +
+        inclusions.downy * inclusionPrices.downy +
+        inclusions.plastic * inclusionPrices.plastic;
+
+      // Add delivery fee if delivery is selected
+      const deliveryFee = fulfillmentType === 'delivery' ? 20 : 0;
+
+      setEstimatedPrice(servicePrice + inclusionsCost + deliveryFee);
     };
+
     calculatePrice();
-  }, [weight, service]);
+  }, [weight, serviceType, inclusions, fulfillmentType]);
+
+  const handleInclusionChange = (key, quantity) => {
+    setInclusions((prev) => ({
+      ...prev,
+      [key]: Math.max(0, quantity),
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -436,20 +612,68 @@ const NewOrderForm = ({ onOrderCreated }) => {
         throw new Error('Authentication token not found. Please log in again.');
       }
 
-      if (!weight || Number(weight) <= 0) {
-        throw new Error('Please enter a valid weight.');
+      if (!weight) {
+        throw new Error('Please select a weight.');
       }
 
       if (!preferredDate) {
         throw new Error('Preferred date is required.');
       }
 
+      if (!preferredTime) {
+        throw new Error('Preferred time is required.');
+      }
+
+      if (estimatedPrice <= 0) {
+        throw new Error('Invalid price calculation. Please refresh and try again.');
+      }
+
       if (fulfillmentType === 'delivery' && !deliveryAddress.trim()) {
         throw new Error('Delivery address is required for delivery orders.');
       }
 
-      const selectedService = serviceOptions.find((s) => s.name === service);
-      const totalAmount = estimatedPrice;
+      const w = parseInt(weight);
+      const pricing = pricingStructure[w];
+      const serviceName = serviceOptions.find((s) => s.value === serviceType)?.label;
+
+      // Build items array
+      const items = [];
+      if (serviceType === 'wash' || serviceType === 'washAndDry' || serviceType === 'fullService') {
+        items.push({
+          name: `${serviceName} - ${weight}kg`,
+          quantity: 1,
+          price: estimatedPrice,
+        });
+      }
+
+      // Map form serviceType to database enum values
+      const serviceTypeMap = {
+        wash: 'wash',
+        washAndDry: 'combo',
+        fullService: 'combo',
+      };
+      const mappedServiceType = serviceTypeMap[serviceType] || 'wash';
+
+      // Log request for debugging
+      const requestBody = {
+        items,
+        totalAmount: estimatedPrice,
+        deliveryAddress: fulfillmentType === 'delivery' ? deliveryAddress.trim() : null,
+        description: `${serviceName} service for ${weight}kg`,
+        preferredDate,
+        preferredTime,
+        serviceType: mappedServiceType,
+        fulfillmentType,
+        weight: parseInt(weight),
+        inclusions: {
+          liquidDetergent: inclusions.liquidDetergent,
+          downy: inclusions.downy,
+          plastic: inclusions.plastic,
+        },
+        notes,
+      };
+
+      console.log('Order submission request:', requestBody);
 
       const res = await fetch('/api/orders', {
         method: 'POST',
@@ -457,35 +681,28 @@ const NewOrderForm = ({ onOrderCreated }) => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session.user.token}`,
         },
-        body: JSON.stringify({
-          items: [
-            {
-              name: service,
-              quantity: parseFloat(weight),
-              price: selectedService.price,
-            },
-          ],
-          totalAmount,
-          deliveryAddress: fulfillmentType === 'delivery' ? deliveryAddress.trim() : null,
-          description: `${service} service for ${weight}kg`,
-          preferredDate,
-          serviceType: selectedService.type,
-          fulfillmentType,
-          weight: parseFloat(weight),
-        }),
+        body: JSON.stringify(requestBody),
       });
 
+      const responseData = await res.json();
+      console.log('Order submission response:', responseData);
+
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || 'Failed to create order.');
+        throw new Error(responseData.message || 'Failed to create order.');
       }
 
       setWeight('');
       setNotes('');
-      setService('Wash & Fold');
+      setServiceType('wash');
       setDeliveryAddress('');
       setPreferredDate('');
+      setPreferredTime('Morning');
       setFulfillmentType('pickup');
+      setInclusions({
+        liquidDetergent: 0,
+        downy: 0,
+        plastic: 0,
+      });
       onOrderCreated();
       broadcastOrderUpdate();
     } catch (err) {
@@ -503,50 +720,266 @@ const NewOrderForm = ({ onOrderCreated }) => {
         </div>
         <h2 className="text-2xl font-bold text-gray-800">Create New Order</h2>
       </div>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Service Type Selection */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Service Type</label>
-          <select
-            value={service}
-            onChange={(e) => setService(e.target.value)}
-            className="w-full p-3 border rounded-lg text-gray-900 bg-white"
-          >
-            {serviceOptions.map((s) => (
-              <option key={s.name}>{s.name}</option>
+          <label className="block text-sm font-semibold text-gray-700 mb-3">Service Type</label>
+          <div className="space-y-2">
+            {serviceOptions.map((option) => (
+              <label
+                key={option.value}
+                className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                style={{ borderColor: serviceType === option.value ? '#3b82f6' : '#e5e7eb' }}
+              >
+                <input
+                  type="radio"
+                  name="serviceType"
+                  value={option.value}
+                  checked={serviceType === option.value}
+                  onChange={(e) => setServiceType(e.target.value)}
+                  className="h-4 w-4 text-blue-600"
+                />
+                <span className="ml-3 text-gray-900 font-medium">{option.label}</span>
+              </label>
             ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
-          <input
-            type="number"
-            step="0.1"
-            placeholder="e.g., 5.5"
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
-            required
-            className="w-full p-3 border rounded-lg text-gray-900"
-          />
-        </div>
-        {estimatedPrice > 0 && (
-          <div className="p-3 bg-blue-50 rounded-lg text-center">
-            <p className="text-sm text-gray-600">Estimated Price</p>
-            <p className="text-xl font-bold text-blue-600">₱{estimatedPrice.toFixed(2)}</p>
           </div>
-        )}
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="fulfillment-toggle"
-            checked={fulfillmentType === 'delivery'}
-            onChange={(e) => setFulfillmentType(e.target.checked ? 'delivery' : 'pickup')}
-            className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-          />
-          <label htmlFor="fulfillment-toggle" className="text-sm font-medium text-gray-700">
-            Will be Delivered
-          </label>
         </div>
 
+        {/* Weight Selection */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-3">Weight (kg)</label>
+          <div className="flex gap-3">
+            {weightOptions.map((w) => (
+              <button
+                key={w}
+                type="button"
+                onClick={() => setWeight(w.toString())}
+                className={`flex-1 p-3 rounded-lg font-medium transition-all ${
+                  weight === w.toString()
+                    ? 'bg-blue-600 text-white border-2 border-blue-600'
+                    : 'bg-gray-100 text-gray-800 border-2 border-gray-300 hover:border-blue-400'
+                }`}
+              >
+                {w} kg
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Pricing Breakdown */}
+        {weight && (
+          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <p className="text-sm font-semibold text-gray-700 mb-3">
+              Pricing Breakdown for {weight}kg:
+            </p>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Wash:</span>
+                <span className="font-medium">₱{pricingStructure[parseInt(weight)].wash}</span>
+              </div>
+              {(serviceType === 'washAndDry' || serviceType === 'fullService') && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Dry:</span>
+                  <span className="font-medium">₱{pricingStructure[parseInt(weight)].dry}</span>
+                </div>
+              )}
+              {serviceType === 'fullService' && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Fold:</span>
+                  <span className="font-medium">₱{pricingStructure[parseInt(weight)].fold}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Inclusions Section - Collapsible Dropdown */}
+        <div className="border-t pt-6">
+          <button
+            type="button"
+            onClick={() => setIsAddOnsOpen(!isAddOnsOpen)}
+            className="w-full p-4 bg-gray-50 border rounded-lg flex items-center justify-between hover:bg-gray-100 transition-colors"
+          >
+            <span className="text-sm font-semibold text-gray-700">Add-ons (Optional)</span>
+            <span className="text-lg text-gray-600">{isAddOnsOpen ? '−' : '+'}</span>
+          </button>
+
+          {isAddOnsOpen && (
+            <div className="mt-3 space-y-3 p-4 bg-gray-50 rounded-lg border">
+              {/* Liquid Detergent */}
+              <div className="p-3 border bg-white rounded-lg flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-800">Liquid Detergent</p>
+                  <p className="text-sm text-gray-500">₱20 each</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleInclusionChange('liquidDetergent', inclusions.liquidDetergent - 1)
+                    }
+                    className="p-2 bg-gray-200 hover:bg-gray-300 rounded transition-colors"
+                  >
+                    −
+                  </button>
+                  <input
+                    type="number"
+                    value={inclusions.liquidDetergent}
+                    onChange={(e) =>
+                      handleInclusionChange('liquidDetergent', parseInt(e.target.value) || 0)
+                    }
+                    min="0"
+                    className="w-12 text-center border rounded p-1 text-gray-900"
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleInclusionChange('liquidDetergent', inclusions.liquidDetergent + 1)
+                    }
+                    className="p-2 bg-gray-200 hover:bg-gray-300 rounded transition-colors"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* Downy */}
+              <div className="p-3 border bg-white rounded-lg flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-800">Downy</p>
+                  <p className="text-sm text-gray-500">₱10 each</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleInclusionChange('downy', inclusions.downy - 1)}
+                    className="p-2 bg-gray-200 hover:bg-gray-300 rounded transition-colors"
+                  >
+                    −
+                  </button>
+                  <input
+                    type="number"
+                    value={inclusions.downy}
+                    onChange={(e) => handleInclusionChange('downy', parseInt(e.target.value) || 0)}
+                    min="0"
+                    className="w-12 text-center border rounded p-1 text-gray-900"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleInclusionChange('downy', inclusions.downy + 1)}
+                    className="p-2 bg-gray-200 hover:bg-gray-300 rounded transition-colors"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* Plastic */}
+              <div className="p-3 border bg-white rounded-lg flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-800">Plastic</p>
+                  <p className="text-sm text-gray-500">₱5 each</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleInclusionChange('plastic', inclusions.plastic - 1)}
+                    className="p-2 bg-gray-200 hover:bg-gray-300 rounded transition-colors"
+                  >
+                    −
+                  </button>
+                  <input
+                    type="number"
+                    value={inclusions.plastic}
+                    onChange={(e) =>
+                      handleInclusionChange('plastic', parseInt(e.target.value) || 0)
+                    }
+                    min="0"
+                    className="w-12 text-center border rounded p-1 text-gray-900"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleInclusionChange('plastic', inclusions.plastic + 1)}
+                    className="p-2 bg-gray-200 hover:bg-gray-300 rounded transition-colors"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Estimated Price */}
+        {estimatedPrice > 0 && (
+          <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+            <div className="space-y-2 text-sm mb-3">
+              {weight && (
+                <>
+                  <div className="flex justify-between text-gray-700">
+                    <span>Service:</span>
+                    <span className="font-medium">
+                      ₱
+                      {(() => {
+                        const w = parseInt(weight);
+                        const pricing = pricingStructure[w];
+                        let servicePrice = 0;
+                        if (serviceType === 'wash') servicePrice = pricing.wash;
+                        else if (serviceType === 'washAndDry')
+                          servicePrice = pricing.wash + pricing.dry;
+                        else if (serviceType === 'fullService')
+                          servicePrice = pricing.wash + pricing.dry + pricing.fold;
+                        return servicePrice;
+                      })()}
+                    </span>
+                  </div>
+                  {(inclusions.liquidDetergent > 0 ||
+                    inclusions.downy > 0 ||
+                    inclusions.plastic > 0) && (
+                    <div className="flex justify-between text-gray-700">
+                      <span>Add-ons:</span>
+                      <span className="font-medium">
+                        ₱
+                        {inclusions.liquidDetergent * 20 +
+                          inclusions.downy * 10 +
+                          inclusions.plastic * 5}
+                      </span>
+                    </div>
+                  )}
+                  {fulfillmentType === 'delivery' && (
+                    <div className="flex justify-between text-gray-700">
+                      <span>Delivery:</span>
+                      <span className="font-medium">₱20</span>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+            <div className="border-t pt-2 flex justify-between">
+              <p className="font-bold text-gray-800">Total Amount</p>
+              <p className="text-2xl font-bold text-green-600">₱{estimatedPrice.toFixed(2)}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Fulfillment Type */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <input
+              type="checkbox"
+              id="fulfillment-toggle"
+              checked={fulfillmentType === 'delivery'}
+              onChange={(e) => setFulfillmentType(e.target.checked ? 'delivery' : 'pickup')}
+              className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+            />
+            <label htmlFor="fulfillment-toggle" className="text-sm font-medium text-gray-700">
+              Will be Delivered <span className="text-blue-600 font-semibold">+₱20</span>
+            </label>
+          </div>
+          <p className="text-xs text-gray-600 ml-6">Maximum delivery distance: 2km from location</p>
+        </div>
+
+        {/* Delivery Address */}
         {fulfillmentType === 'delivery' && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Address</label>
@@ -560,6 +993,8 @@ const NewOrderForm = ({ onOrderCreated }) => {
             />
           </div>
         )}
+
+        {/* Preferred Date */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Date</label>
           <input
@@ -570,6 +1005,25 @@ const NewOrderForm = ({ onOrderCreated }) => {
             className="w-full p-3 border rounded-lg text-gray-900"
           />
         </div>
+
+        {/* Preferred Time */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Preferred Time Period
+          </label>
+          <select
+            value={preferredTime}
+            onChange={(e) => setPreferredTime(e.target.value)}
+            required
+            className="w-full p-3 border rounded-lg text-gray-900 font-medium"
+          >
+            <option value="Morning">Morning</option>
+            <option value="Afternoon">Afternoon</option>
+            <option value="Night">Night</option>
+          </select>
+        </div>
+
+        {/* Notes */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
           <textarea
@@ -580,14 +1034,17 @@ const NewOrderForm = ({ onOrderCreated }) => {
             className="w-full p-3 border rounded-lg text-gray-900"
           />
         </div>
+
+        {/* Submit Button */}
         <button
           type="submit"
           disabled={isLoading || !weight}
-          className="w-full bg-green-500 text-white py-3 rounded-lg font-medium hover:bg-green-600 disabled:bg-green-300 disabled:cursor-not-allowed"
+          className="w-full bg-green-500 text-white py-3 rounded-lg font-medium hover:bg-green-600 disabled:bg-green-300 disabled:cursor-not-allowed transition-colors"
         >
           {isLoading ? 'Submitting...' : 'Submit Order'}
         </button>
-        {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+
+        {error && <p className="text-red-500 text-sm mt-2 p-3 bg-red-50 rounded-lg">{error}</p>}
       </form>
     </div>
   );
@@ -616,6 +1073,7 @@ const LoggedInDashboard = ({ user }) => {
       if (res.ok) {
         const data = await res.json();
         const ordersList = data.orders || data;
+        console.log('[CUSTOMER FETCH] Orders received from API:', ordersList);
         const filteredOrders = Array.isArray(ordersList)
           ? ordersList.filter((order) => {
               const customer = order.customerId || order.user || {};
@@ -626,6 +1084,11 @@ const LoggedInDashboard = ({ user }) => {
               return customerId && customerId.toString() === user.id;
             })
           : [];
+        console.log('[CUSTOMER FETCH] Filtered orders:', filteredOrders);
+        console.log(
+          '[CUSTOMER FETCH] Weight values in orders:',
+          filteredOrders.map((o) => ({ id: o.id, weight: o.weight }))
+        );
         setOrders(filteredOrders);
         const nextDeliveryUpdates = {};
         filteredOrders.forEach((order) => {
@@ -838,13 +1301,9 @@ const LoggedInDashboard = ({ user }) => {
           <h1 className="text-2xl font-bold text-gray-800">
             Welcome, <span className="text-blue-600">{user.name.split(' ')[0]}</span>!
           </h1>
-          <button
-            onClick={() => signOut({ callbackUrl: '/' })}
-            className="flex items-center space-x-2 text-gray-600 hover:text-red-500 transition-colors"
-          >
-            <LogOut size={18} />
-            <span className="font-medium">Logout</span>
-          </button>
+          <div className="flex items-center gap-6">
+            <UserProfileDropdown />
+          </div>
         </div>
       </header>
 
@@ -925,6 +1384,14 @@ const LoggedInDashboard = ({ user }) => {
 
                       {expandedOrderId === order.id && (
                         <div className="mt-2 border border-t-0 rounded-b-lg p-4 bg-white space-y-4">
+                          {/* Order Timeline & Timestamps */}
+                          <OrderTimestampDisplay
+                            submittedAt={order.submittedAt}
+                            preferredDate={order.preferredDate}
+                            preferredTime={order.preferredTime}
+                            compact={false}
+                          />
+
                           <StatusProgressTracker
                             status={order.status}
                             eta={order.preferredDate}

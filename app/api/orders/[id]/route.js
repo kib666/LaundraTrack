@@ -65,6 +65,8 @@ export async function GET(request, { params }) {
       serviceType: order.serviceType,
       service: order.serviceType,
       weight: order.weight,
+      preferredTime: order.preferredTime,
+      submittedAt: order.submittedAt,
       paymentStatus: order.paymentStatus,
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
@@ -159,7 +161,23 @@ export async function PATCH(request, { params }) {
       // Allow customers to cancel only if order is pending or confirmed
       if (updates.status === 'cancelled') {
         if (order.status === 'pending' || order.status === 'confirmed') {
+          const previousStatus = order.status;
           order.status = 'cancelled';
+          order.cancelledAt = new Date();
+          order.cancelledBy = auth.user.id;
+          order.cancelReason = updates.cancelReason || 'Cancelled by customer';
+
+          // Track status change in history
+          if (!order.statusHistory) {
+            order.statusHistory = [];
+          }
+          order.statusHistory.push({
+            status: 'cancelled',
+            changedAt: new Date(),
+            changedBy: auth.user.id,
+            notes: `Order cancelled by customer: ${updates.cancelReason || 'No reason provided'}`,
+          });
+
           await order.save();
           // Return normalized order with uppercase status
           const normalizedOrder = {
@@ -283,6 +301,24 @@ export async function PATCH(request, { params }) {
             { status: 400 }
           );
         }
+
+        // Track status change in history
+        if (!order.statusHistory) {
+          order.statusHistory = [];
+        }
+        order.statusHistory.push({
+          status: updates.status,
+          changedAt: new Date(),
+          changedBy: auth.user.id,
+          notes: `Status changed to ${updates.status} by ${auth.user.role}`,
+        });
+
+        // Track cancellation details if cancelling
+        if (updates.status === 'cancelled') {
+          order.cancelledAt = new Date();
+          order.cancelledBy = auth.user.id;
+          order.cancelReason = updates.cancelReason || `Cancelled by ${auth.user.role}`;
+        }
       }
       Object.assign(order, updates);
     }
@@ -323,12 +359,23 @@ export async function DELETE(request, { params }) {
       return Response.json({ success: false, message: auth.error }, { status: auth.status });
     }
 
-    // Only admin can delete orders
-    if (auth.user.role !== 'admin') {
+    // Staff and admin can delete orders
+    if (auth.user.role !== 'admin' && auth.user.role !== 'staff') {
       return Response.json(
-        { success: false, message: 'Only admins can delete orders' },
+        { success: false, message: 'Only staff and admins can delete orders' },
         { status: 403 }
       );
+    }
+
+    // Check approval for staff
+    if (auth.user.role === 'staff') {
+      const approval = requireApproval(auth.user);
+      if (approval.error) {
+        return Response.json(
+          { success: false, message: approval.error },
+          { status: approval.status }
+        );
+      }
     }
 
     const { id } = params;
