@@ -1,0 +1,78 @@
+# ============================================
+# LaudraTrack Production Docker Compose
+# Optimized for production deployment
+# Override: docker compose -f docker-compose.yml -f docker-compose.prod.yml up
+# ============================================
+
+version: '3.8'
+
+services:
+  app:
+    # Use pre-built image from registry
+    image: laudratrack:latest
+
+    # Production restart policy
+    restart: always
+
+    # Resource limits for production
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+    # Remove development volumes
+    volumes: []
+
+    # Environment: Use .env.production values
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+
+    # Increase logging
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
+
+  mongo:
+    # Production MongoDB settings
+    restart: always
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+
+    # Production logging
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '50m'
+        max-file: '5'
+
+  mongo-express:
+    # Disable in production (security)
+    # Uncomment if needed for admin access
+    # profiles: ["admin-only"]
+
+    restart: always
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M

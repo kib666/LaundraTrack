@@ -12,11 +12,7 @@ const OrderCardMenu = ({ orderId, orderStatus, onDelete, onRevert }) => {
   const menuRef = useRef(null);
 
   // Determine which actions are available based on status
-  const canRevert =
-    orderStatus &&
-    orderStatus !== 'pending' &&
-    orderStatus !== 'cancelled' &&
-    orderStatus !== 'delivered';
+  const canRevert = orderStatus && orderStatus !== 'pending' && orderStatus !== 'cancelled';
   const canDelete = true; // Can always delete
 
   // Close menu when clicking outside

@@ -10,6 +10,17 @@ import OrderCardMenu from '@/components/staff/OrderCardMenu';
 import UserProfileDropdown from '@/components/common/UserProfileDropdown';
 import { formatManilaTime, formatManilaDate } from '@/lib/formatters';
 
+// Helper function to get display label for service type
+const getServiceTypeLabel = (serviceType) => {
+  const mapping = {
+    wash: 'Wash',
+    washAndDry: 'Wash and Dry',
+    fullService: 'Full Service (Wash, Dry, and Fold)',
+    combo: 'Wash and Dry', // Fallback for legacy data
+  };
+  return mapping[serviceType] || serviceType;
+};
+
 const StaffTopBar = ({ title, onMenuToggle }) => {
   return (
     <div className="bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center">
@@ -119,11 +130,13 @@ const OrderCard = ({ order, onStatusUpdate, onCancel, onDelete, onRevert }) => {
           nextStatus: 'ready_for_pickup',
         };
       case 'ready_for_pickup':
-        return {
-          text: isDelivery ? 'Mark Out for Delivery' : 'Confirm Pickup',
-          color: 'bg-purple-500 hover:bg-purple-600',
-          nextStatus: isDelivery ? 'picked_up' : 'delivered',
-        };
+        return isDelivery
+          ? null
+          : {
+              text: 'Confirm Pickup',
+              color: 'bg-purple-500 hover:bg-purple-600',
+              nextStatus: 'delivered',
+            };
       case 'picked_up':
         return isDelivery
           ? {
@@ -168,31 +181,26 @@ const OrderCard = ({ order, onStatusUpdate, onCancel, onDelete, onRevert }) => {
               <span className="font-medium">Items:</span> {itemsCount}
             </p>
             <p>
-              <span className="font-medium">Service:</span> {order.serviceType || 'wash'}
+              <span className="font-medium">Service:</span>{' '}
+              {getServiceTypeLabel(order.serviceType || 'wash')}
             </p>
 
             {/* Order Submission Time */}
             {order.submittedAt && (
               <div className="bg-blue-50 border-l-2 border-blue-400 px-2 py-1 rounded">
-                <p className="text-xs font-semibold text-blue-700 uppercase">Order Placed</p>
-                <p className="font-medium text-gray-900">{formatManilaTime(order.submittedAt)}</p>
+                <p className="text-sm font-medium text-gray-900">
+                  Order Placed: {formatManilaTime(order.submittedAt)}
+                </p>
               </div>
             )}
 
             {/* Preferred Delivery Date & Time */}
             {(order.preferredDate || order.preferredTime) && (
               <div className="bg-green-50 border-l-2 border-green-400 px-2 py-1 rounded">
-                <p className="text-xs font-semibold text-green-700 uppercase">Preferred Delivery</p>
-                <div className="space-y-1">
-                  {order.preferredDate && (
-                    <p className="font-medium text-gray-900">
-                      📅 {formatManilaDate(order.preferredDate)}
-                    </p>
-                  )}
-                  {order.preferredTime && (
-                    <p className="font-medium text-green-700">⏰ {order.preferredTime}</p>
-                  )}
-                </div>
+                <p className="text-sm font-medium text-gray-900">
+                  Preferred Delivery: {order.preferredDate && formatManilaDate(order.preferredDate)}
+                  {order.preferredTime && ` - ${order.preferredTime}`}
+                </p>
               </div>
             )}
 
@@ -448,6 +456,12 @@ export default function StaffPage() {
   const [activeTab, setActiveTab] = useState('tasks');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  console.log('[STAFF PAGE] Session status:', status, {
+    hasSession: !!session,
+    userRole: session?.user?.role,
+    hasToken: !!session?.user?.token,
+  });
+
   // Redirect if not authenticated or not staff/admin
   useEffect(() => {
     // Wait for session to load
@@ -474,19 +488,28 @@ export default function StaffPage() {
       }
 
       try {
-        const headers = session?.user?.token
-          ? { Authorization: `Bearer ${session.user.token}` }
-          : {};
+        const token = session?.user?.token;
+        console.log('[STAFF] Fetching orders with token:', token ? '✓' : '✗');
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
         const res = await fetch('/api/orders', { headers });
+        console.log('[STAFF] Orders API response status:', res.status);
         if (res.ok) {
           const data = await res.json();
+          console.log('[STAFF] Received orders data:', data);
           const ordersList = data.orders || data;
           setOrders(Array.isArray(ordersList) ? ordersList : []);
+          console.log(
+            '[STAFF] Set orders to:',
+            Array.isArray(ordersList) ? ordersList.length : 0,
+            'items'
+          );
         } else {
+          const errorText = await res.text();
+          console.error('[STAFF] Failed to fetch orders:', res.status, errorText);
           setOrders([]);
         }
       } catch (error) {
-        console.error('Error fetching orders:', error);
+        console.error('[STAFF] Error fetching orders:', error);
         setOrders([]);
       } finally {
         if (showLoading) {

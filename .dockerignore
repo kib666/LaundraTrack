@@ -1,17 +1,81 @@
-node_modules
-npm-debug.log
-.next
+# ========== Version Control ==========
 .git
 .gitignore
-README.md
-.env
-.env.local
-.DS_Store
+.gitattributes
+
+# ========== IDE & Editor ==========
 .vscode
+.vscode/*
 .idea
+.DS_Store
 *.swp
 *.swo
-*~
+*.swn
+*.sublime-*
+.prettierrc.json
+.eslintrc.json
+
+# ========== Package Management ==========
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn/cache
+.yarn/install-state.gz
+
+# ========== Environment Files ==========
+.env.local
+.env.*.local
+.env.example
+
+# ========== Build & Distribution ==========
+build/
+dist/
+.next/
+out/
+node_modules/
+.turbo/
+.vercel
+
+# ========== Testing ==========
+coverage/
+.nyc_output
+__tests__
+*.test.js
+*.spec.js
+jest.config.js
+
+# ========== Documentation ==========
+docs/
+README.md
+START_HERE.md
+*.md
+
+# ========== Project Files ==========
+.zencoder/
+.github/
+.vercel/
+.dockerignore
+Dockerfile
+docker-compose.yml
+docker-compose.*.yml
+vercel.json
+
+# ========== OS Files ==========
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ========== Miscellaneous ==========
 .turbo
-coverage
-.eslintcache
+.cache
+.pnpm-store
+pnpm-lock.yaml
+yarn.lock
+scripts/
+
+# ========== Large Files ==========
+*.tar
+*.tar.gz
+*.zip

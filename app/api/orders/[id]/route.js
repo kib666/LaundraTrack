@@ -32,7 +32,8 @@ export async function GET(request, { params }) {
     }
 
     // Helper function to normalize status to uppercase for UI
-    const normalizeStatus = (status) => {
+    const normalizeStatus = (status, isDeleted) => {
+      if (isDeleted) return 'DELETED';
       const statusMap = {
         pending: 'PENDING',
         confirmed: 'PENDING',
@@ -52,8 +53,11 @@ export async function GET(request, { params }) {
       trackingNumber: order.trackingNumber,
       customerId: order.customerId,
       staffId: order.staffId,
-      status: normalizeStatus(order.status),
+      status: normalizeStatus(order.status, order.isDeleted),
       dbStatus: order.status,
+      isDeleted: order.isDeleted,
+      deletedAt: order.deletedAt,
+      deletedBy: order.deletedBy,
       items: order.items,
       totalAmount: order.totalAmount,
       total: order.totalAmount,
@@ -144,7 +148,8 @@ export async function PATCH(request, { params }) {
     }
 
     // Helper function to normalize status to uppercase for UI
-    const normalizeStatus = (status) => {
+    const normalizeStatus = (status, isDeleted) => {
+      if (isDeleted) return 'DELETED';
       const statusMap = {
         pending: 'PENDING',
         confirmed: 'PENDING',
@@ -327,7 +332,7 @@ export async function PATCH(request, { params }) {
     // Return normalized order with uppercase status for staff/admin
     const normalizedOrder = {
       ...order.toObject(),
-      status: normalizeStatus(order.status),
+      status: normalizeStatus(order.status, order.isDeleted),
     };
 
     return Response.json(
@@ -379,10 +384,28 @@ export async function DELETE(request, { params }) {
 
     const { id } = params;
 
-    const order = await Order.findByIdAndDelete(id);
+    const order = await Order.findById(id);
     if (!order) {
       return Response.json({ success: false, message: 'Order not found' }, { status: 404 });
     }
+
+    // Perform soft delete - mark as deleted instead of removing
+    order.isDeleted = true;
+    order.deletedAt = new Date();
+    order.deletedBy = auth.user.id;
+
+    // Add deletion to status history for audit trail
+    if (!order.statusHistory) {
+      order.statusHistory = [];
+    }
+    order.statusHistory.push({
+      status: 'deleted',
+      changedAt: new Date(),
+      changedBy: auth.user.id,
+      notes: `Order deleted by ${auth.user.role} ${auth.user.name}`,
+    });
+
+    await order.save();
 
     return Response.json(
       {

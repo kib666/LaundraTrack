@@ -173,7 +173,8 @@ const OrderDetails = ({ orders, onBack, onCancel, onOrderUpdate }) => {
                 <div className="flex items-center text-sm text-gray-700">
                   <Package size={16} className="mr-2 text-gray-500 flex-shrink-0" />
                   <span>
-                    {order.weight || '0'} kg - {order.service || order.serviceType}
+                    {order.weight || '0'} kg -{' '}
+                    {getServiceTypeLabel(order.service || order.serviceType)}
                   </span>
                 </div>
                 {order.deliveryAddress && (
@@ -534,6 +535,17 @@ const SERVICE_OPTIONS = [
 
 const WEIGHT_OPTIONS = [8, 12];
 
+// Helper function to get display label for service type
+const getServiceTypeLabel = (serviceType) => {
+  const mapping = {
+    wash: 'Wash',
+    washAndDry: 'Wash and Dry',
+    fullService: 'Full Service (Wash, Dry, and Fold)',
+    combo: 'Wash and Dry', // Fallback for legacy data
+  };
+  return mapping[serviceType] || serviceType;
+};
+
 const NewOrderForm = ({ onOrderCreated }) => {
   const { data: session } = useSession();
   const [weight, setWeight] = useState('');
@@ -631,7 +643,7 @@ const NewOrderForm = ({ onOrderCreated }) => {
         throw new Error('Delivery address is required for delivery orders.');
       }
 
-      const serviceName = serviceOptions.find((s) => s.value === serviceType)?.label;
+      const serviceName = SERVICE_OPTIONS.find((s) => s.value === serviceType)?.label;
 
       // Build items array
       const items = [];
@@ -643,13 +655,8 @@ const NewOrderForm = ({ onOrderCreated }) => {
         });
       }
 
-      // Map form serviceType to database enum values
-      const serviceTypeMap = {
-        wash: 'wash',
-        washAndDry: 'combo',
-        fullService: 'combo',
-      };
-      const mappedServiceType = serviceTypeMap[serviceType] || 'wash';
+      // Use the actual service type (no mapping needed)
+      const mappedServiceType = serviceType;
 
       // Log request for debugging
       const requestBody = {
@@ -772,18 +779,18 @@ const NewOrderForm = ({ onOrderCreated }) => {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-600">Wash:</span>
-                <span className="font-medium">₱{pricingStructure[parseInt(weight)].wash}</span>
+                <span className="font-medium">₱{PRICING_STRUCTURE[parseInt(weight)].wash}</span>
               </div>
               {(serviceType === 'washAndDry' || serviceType === 'fullService') && (
                 <div className="flex justify-between">
                   <span className="text-gray-600">Dry:</span>
-                  <span className="font-medium">₱{pricingStructure[parseInt(weight)].dry}</span>
+                  <span className="font-medium">₱{PRICING_STRUCTURE[parseInt(weight)].dry}</span>
                 </div>
               )}
               {serviceType === 'fullService' && (
                 <div className="flex justify-between">
                   <span className="text-gray-600">Fold:</span>
-                  <span className="font-medium">₱{pricingStructure[parseInt(weight)].fold}</span>
+                  <span className="font-medium">₱{PRICING_STRUCTURE[parseInt(weight)].fold}</span>
                 </div>
               )}
             </div>
@@ -919,7 +926,7 @@ const NewOrderForm = ({ onOrderCreated }) => {
                       ₱
                       {(() => {
                         const w = parseInt(weight);
-                        const pricing = pricingStructure[w];
+                        const pricing = PRICING_STRUCTURE[w];
                         let servicePrice = 0;
                         if (serviceType === 'wash') servicePrice = pricing.wash;
                         else if (serviceType === 'washAndDry')
@@ -1353,7 +1360,7 @@ const LoggedInDashboard = ({ user }) => {
                             <Package size={16} className="mr-2 text-gray-500 flex-shrink-0" />
                             <span>
                               {(order.weight || 0).toString()}kg -{' '}
-                              {order.serviceType || order.service}
+                              {getServiceTypeLabel(order.serviceType || order.service)}
                             </span>
                           </div>
                           <div className="flex items-center text-sm text-gray-700">
@@ -1361,7 +1368,7 @@ const LoggedInDashboard = ({ user }) => {
                             <span>
                               {order.fulfillmentType === 'delivery'
                                 ? order.deliveryAddress || 'Delivery address pending'
-                                : 'Customer will drop off items'}
+                                : 'Customer will pickup items'}
                             </span>
                           </div>
                           <div className="flex items-center text-sm text-gray-700">

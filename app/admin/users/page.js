@@ -25,10 +25,13 @@ export default function UsersManagementPage() {
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/users', {
+      // Add cache busting parameter to prevent caching issues on network/LAN
+      const timestamp = Date.now();
+      const response = await fetch(`/api/admin/users?_t=${timestamp}`, {
         headers: {
           Authorization: `Bearer ${session?.user?.token}`,
         },
+        cache: 'no-store',
       });
 
       if (response.ok) {
@@ -184,7 +187,7 @@ export default function UsersManagementPage() {
         </button>
       </div>
       <div className="bg-white rounded-lg shadow-sm border p-6">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-y-auto max-h-[600px]">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>

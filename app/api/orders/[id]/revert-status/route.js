@@ -45,15 +45,13 @@ export async function POST(request, { params }) {
       );
     }
 
-    // Define status progression
-    const statusProgression = [
-      'pending',
-      'confirmed',
-      'in_progress',
-      'ready_for_pickup',
-      'picked_up',
-      'delivered',
-    ];
+    // Determine fulfillment type (default to pickup if not specified)
+    const isDelivery = (order.fulfillmentType || 'pickup') === 'delivery';
+
+    // Define status progression based on fulfillment type
+    const statusProgression = isDelivery
+      ? ['pending', 'confirmed', 'in_progress', 'ready_for_pickup', 'picked_up', 'delivered']
+      : ['pending', 'confirmed', 'in_progress', 'ready_for_pickup', 'delivered'];
 
     const currentIndex = statusProgression.indexOf(order.status);
     if (currentIndex <= 0) {
@@ -82,11 +80,52 @@ export async function POST(request, { params }) {
 
     await order.save();
 
+    // Helper function to normalize status to uppercase for UI
+    const normalizeStatus = (status) => {
+      const statusMap = {
+        pending: 'PENDING',
+        confirmed: 'PENDING',
+        in_progress: 'IN_PROGRESS',
+        ready_for_pickup: 'COMPLETED',
+        picked_up: 'COMPLETED',
+        delivered: 'DELIVERED',
+        cancelled: 'CANCELLED',
+      };
+      return statusMap[status] || status.toUpperCase();
+    };
+
+    // Format the returned order to match the frontend expectations
+    const formattedOrder = {
+      _id: order._id,
+      id: order._id,
+      trackingNumber: order.trackingNumber,
+      customerId: order.customerId,
+      staffId: order.staffId,
+      status: normalizeStatus(order.status),
+      dbStatus: order.status,
+      items: order.items,
+      totalAmount: order.totalAmount,
+      total: order.totalAmount,
+      pickupAddress: order.pickupAddress,
+      deliveryAddress: order.deliveryAddress,
+      deliveryDate: order.deliveryDate,
+      pickupDate: order.pickupDate,
+      preferredDate: order.preferredDate,
+      serviceType: order.serviceType,
+      fulfillmentType: order.fulfillmentType || 'pickup',
+      weight: order.weight,
+      preferredTime: order.preferredTime,
+      submittedAt: order.submittedAt,
+      paymentStatus: order.paymentStatus,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+    };
+
     return Response.json(
       {
         success: true,
         message: `Order reverted to ${previousStatus}`,
-        order: order.toObject(),
+        order: formattedOrder,
       },
       { status: 200 }
     );

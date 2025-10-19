@@ -16,7 +16,10 @@ export async function PATCH(request, { params }) {
     // Check authorization
     const roleCheck = requireRole('admin')(auth.user);
     if (roleCheck.error) {
-      return Response.json({ success: false, message: roleCheck.error }, { status: roleCheck.status });
+      return Response.json(
+        { success: false, message: roleCheck.error },
+        { status: roleCheck.status }
+      );
     }
 
     const { id } = params;
@@ -32,10 +35,7 @@ export async function PATCH(request, { params }) {
     // Find user
     const user = await User.findById(id);
     if (!user) {
-      return Response.json(
-        { success: false, message: 'User not found' },
-        { status: 404 }
-      );
+      return Response.json({ success: false, message: 'User not found' }, { status: 404 });
     }
 
     // Only approve pending users
@@ -65,7 +65,14 @@ export async function PATCH(request, { params }) {
             status: user.status,
           },
         },
-        { status: 200 }
+        {
+          status: 200,
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+            Pragma: 'no-cache',
+            Expires: '0',
+          },
+        }
       );
     } else {
       // Reject
@@ -87,7 +94,14 @@ export async function PATCH(request, { params }) {
             status: user.status,
           },
         },
-        { status: 200 }
+        {
+          status: 200,
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+            Pragma: 'no-cache',
+            Expires: '0',
+          },
+        }
       );
     }
   } catch (error) {

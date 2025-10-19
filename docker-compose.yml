@@ -1,83 +1,128 @@
+# ============================================
+# LaudraTrack Docker Compose Configuration
+# Orchestrates all services for the application
+# ============================================
+
 version: '3.8'
 
 services:
-  frontend:
+  # ========== NEXT.JS APPLICATION ==========
+  app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: laudratrack-frontend
+      target: runtime
+    container_name: laudratrack-app
+    restart: unless-stopped
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
+      # Application
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=http://backend:3001
+      - PORT=3000
+
+      # Next.js & API Configuration
+      - NEXT_PUBLIC_API_URL=http://localhost:3000/api
       - NEXTAUTH_URL=http://localhost:3000
-      - NEXTAUTH_SECRET=your-secret-key-change-in-production
-    depends_on:
-      - backend
-    restart: unless-stopped
-    networks:
-      - laudratrack-network
 
-  # Backend service (placeholder for when you build it)
-  backend:
-    image: node:18-alpine
-    container_name: laudratrack-backend
-    ports:
-      - "3001:3001"
-    environment:
-      - NODE_ENV=production
-      - MONGODB_URI=mongodb://mongo:27017/laudratrack
-      - JWT_SECRET=your-jwt-secret
+      # Database Configuration
+      - MONGODB_URI=mongodb://admin:password123@mongo:27017/laudratrack?authSource=admin
+
+      # Authentication (CHANGE THESE IN PRODUCTION!)
+      - NEXTAUTH_SECRET=your-nextauth-secret-change-in-production
+      - JWT_SECRET=your-jwt-secret-change-in-production
       - JWT_EXPIRE=7d
+
     depends_on:
-      - mongo
-    restart: unless-stopped
+      mongo:
+        condition: service_healthy
+
     networks:
       - laudratrack-network
-    # Uncomment when backend is ready:
-    # build:
-    #   context: ../laudratrack-backend
-    #   dockerfile: Dockerfile
-    # command: npm start
 
-  # MongoDB database
+    healthcheck:
+      test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://localhost:3000']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+    volumes:
+      # Only for development - remove in production
+      - ./app:/app/app
+      - ./components:/app/components
+      - ./lib:/app/lib
+      - ./hooks:/app/hooks
+
+  # ========== MONGODB DATABASE ==========
   mongo:
     image: mongo:7.0-alpine
     container_name: laudratrack-mongo
+    restart: unless-stopped
     ports:
-      - "27017:27017"
+      - '27017:27017'
+
     environment:
       - MONGO_INITDB_ROOT_USERNAME=admin
       - MONGO_INITDB_ROOT_PASSWORD=password123
       - MONGO_INITDB_DATABASE=laudratrack
+      - MONGO_INITDB_AUTH=true
+
     volumes:
+      # Persistent data storage
       - mongo-data:/data/db
       - mongo-config:/data/configdb
-    restart: unless-stopped
+
     networks:
       - laudratrack-network
 
-  # Optional: Mongo Express for database management UI
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # ========== MONGO EXPRESS (Database UI) ==========
   mongo-express:
     image: mongo-express:1.0.0-alpine
     container_name: laudratrack-mongo-express
+    restart: unless-stopped
     ports:
-      - "8081:8081"
+      - '8081:8081'
+
     environment:
       - ME_CONFIG_MONGODB_URL=mongodb://admin:password123@mongo:27017/?authSource=admin
       - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
       - ME_CONFIG_MONGODB_ADMINPASSWORD=password123
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=password
+
     depends_on:
-      - mongo
-    restart: unless-stopped
+      mongo:
+        condition: service_healthy
+
     networks:
       - laudratrack-network
 
+    healthcheck:
+      test: wget --quiet --tries=1 --spider http://localhost:8081 || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+# ========== VOLUMES ==========
 volumes:
   mongo-data:
+    driver: local
   mongo-config:
+    driver: local
 
+# ========== NETWORKS ==========
 networks:
   laudratrack-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

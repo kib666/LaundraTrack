@@ -21,6 +21,8 @@
     "axios": "^1.7.7",
     "bcryptjs": "^2.4.3",
     "date-fns": "^3.6.0",
+    "dotenv": "^17.2.3",
+    "jose": "^6.1.0",
     "jsonwebtoken": "^9.0.0",
     "lucide-react": "^0.395.0",
     "mongoose": "^7.6.3",

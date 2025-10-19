@@ -29,6 +29,7 @@ export async function GET(request) {
     const status = searchParams.get('status');
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
+    const includeDeleted = searchParams.get('includeDeleted') === 'true';
 
     // Build filter based on user role
     const filter = {};
@@ -36,6 +37,12 @@ export async function GET(request) {
       filter.customerId = auth.user.id;
     }
     if (status) filter.status = status;
+
+    // Only staff/admin hide deleted orders - customers see all orders including deleted ones
+    // This way customers can see when their order was deleted
+    if (auth.user.role !== 'customer' && !includeDeleted) {
+      filter.isDeleted = false;
+    }
 
     // Fetch orders with pagination
     const orders = await Order.find(filter)
@@ -48,7 +55,8 @@ export async function GET(request) {
     const total = await Order.countDocuments(filter);
 
     // Helper function to normalize status to uppercase for UI
-    const normalizeStatus = (status) => {
+    const normalizeStatus = (status, isDeleted) => {
+      if (isDeleted) return 'DELETED';
       const statusMap = {
         pending: 'PENDING',
         confirmed: 'PENDING',
@@ -68,8 +76,11 @@ export async function GET(request) {
       trackingNumber: order.trackingNumber,
       customerId: order.customerId,
       staffId: order.staffId,
-      status: normalizeStatus(order.status),
+      status: normalizeStatus(order.status, order.isDeleted),
       dbStatus: order.status,
+      isDeleted: order.isDeleted,
+      deletedAt: order.deletedAt,
+      deletedBy: order.deletedBy,
       items: order.items,
       totalAmount: order.totalAmount,
       total: order.totalAmount,
@@ -146,6 +157,8 @@ export async function POST(request) {
       fulfillmentType = 'pickup',
       weight,
       serviceType,
+      inclusions,
+      notes,
     } = requestData;
 
     if (
@@ -203,6 +216,7 @@ export async function POST(request) {
       items,
       totalAmount,
       description,
+      notes,
       pickupAddress:
         fulfillmentType === 'delivery'
           ? pickupAddress?.trim() || null
@@ -217,6 +231,11 @@ export async function POST(request) {
       serviceType: serviceType || 'wash',
       status: 'pending',
       paymentStatus: 'pending',
+      inclusions: inclusions || {
+        liquidDetergent: 0,
+        downy: 0,
+        plastic: 0,
+      },
     });
 
     await order.save();

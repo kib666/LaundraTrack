@@ -171,23 +171,16 @@ export default function HomePage() {
             </div>
 
             {/* Subtitle */}
-            <div className="mb-8">
-              <p className="text-blue-600 font-semibold text-lg tracking-wide flex items-center justify-center gap-2">
-                <Sparkles size={20} className="animate-pulse" />
-                LaundraTrack — Track Your Laundry, Anytime, Anywhere.
-                <Sparkles size={20} className="animate-pulse" />
-              </p>
-            </div>
 
             {/* Main Heading */}
-            <h1 className="text-5xl md:text-7xl font-extrabold text-gray-900 leading-tight mb-6">
+            <h5 className="text-5xl md:text-7xl font-extrabold text-gray-900 leading-tight mb-6">
               <span className="bg-gradient-to-r from-gray-900 via-blue-900 to-gray-900 bg-clip-text text-transparent">
                 Professional Laundry
               </span>
               <span className="block mt-3 bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 bg-clip-text text-transparent">
                 Management System
               </span>
-            </h1>
+            </h5>
 
             <p className="mt-6 text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
               Streamline your laundry business with our comprehensive tracking and management

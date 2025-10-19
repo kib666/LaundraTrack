@@ -386,23 +386,39 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [orderSuccess, setOrderSuccess] = useState(false);
 
+  console.log('[ADMIN PAGE] Session loaded:', {
+    hasSession: !!session,
+    userRole: session?.user?.role,
+    hasToken: !!session?.user?.token,
+  });
+
   const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
-      const headers = session?.user?.token ? { Authorization: `Bearer ${session.user.token}` } : {};
+      const token = session?.user?.token;
+      console.log('[ADMIN] Fetching orders with token:', token ? '✓' : '✗');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const response = await fetch('/api/orders?limit=100', { headers });
 
+      console.log('[ADMIN] Orders API response status:', response.status);
       if (!response.ok) {
-        console.error('Failed to fetch orders:', await response.text());
+        const errorText = await response.text();
+        console.error('[ADMIN] Failed to fetch orders:', response.status, errorText);
         setOrders([]);
         return;
       }
 
       const data = await response.json();
+      console.log('[ADMIN] Received orders data:', data);
       const ordersList = data.orders || data;
       setOrders(Array.isArray(ordersList) ? ordersList : []);
+      console.log(
+        '[ADMIN] Set orders to:',
+        Array.isArray(ordersList) ? ordersList.length : 0,
+        'items'
+      );
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      console.error('[ADMIN] Error fetching orders:', error);
       setOrders([]);
     } finally {
       setLoading(false);
@@ -411,9 +427,11 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (!session?.user?.token) {
+      console.log('[ADMIN] useEffect - No token yet, skipping fetch');
       return;
     }
 
+    console.log('[ADMIN] useEffect - Token available, calling fetchOrders');
     fetchOrders();
   }, [fetchOrders, session?.user?.token]);
 

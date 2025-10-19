@@ -2,11 +2,34 @@
 
 Welcome to **LaudraTrack** - A professional laundry management system built with Next.js 14, React, and MongoDB.
 
-This guide will get you started quickly. For comprehensive information, see the documentation files below.
+This guide will get you started in minutes. For comprehensive information, see the documentation files below.
 
 ---
 
-## 🎯 Get Started in 5 Minutes
+## ⚡ Quickest Start (Recommended: Using Docker)
+
+Get LaudraTrack running in **2 commands**:
+
+```bash
+# 1. Clone and prepare
+git clone https://github.com/yourusername/laudratrack.git
+cd laudratrack
+cp .env.example .env.local
+
+# 2. Start everything with Docker
+docker compose up -d
+```
+
+Done! Access the application:
+
+- **App:** http://localhost:3000
+- **Database UI:** http://localhost:8081 (admin/password)
+
+**First run takes 2-3 minutes** while Docker pulls images and builds the app.
+
+---
+
+## 🎯 Get Started in 5 Minutes (Local Development)
 
 ### 1. Install Dependencies
 
@@ -18,10 +41,23 @@ npm install
 
 ```bash
 cp .env.example .env.local
-# Update .env.local with your values
+# Update .env.local with your values (or keep defaults for local testing)
 ```
 
-### 3. Start Development Server
+### 3. Start MongoDB
+
+**Using Docker (recommended):**
+
+```bash
+docker run -d --name laudratrack-mongo -p 27017:27017 \
+  -e MONGO_INITDB_ROOT_USERNAME=admin \
+  -e MONGO_INITDB_ROOT_PASSWORD=password123 \
+  mongo:7.0-alpine
+```
+
+Or [install locally](https://docs.mongodb.com/manual/installation/)
+
+### 4. Start Development Server
 
 ```bash
 npm run dev
