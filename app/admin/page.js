@@ -407,38 +407,41 @@ export default function AdminDashboard() {
     hasToken: !!session?.user?.token,
   });
 
-  const fetchOrders = useCallback(async () => {
-    try {
-      setLoading(true);
-      const token = session?.user?.token;
-      console.log('[ADMIN] Fetching orders with token:', token ? '✓' : '✗');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const response = await fetch('/api/orders?limit=100', { headers });
+  const fetchOrders = useCallback(
+    async (showLoading = true) => {
+      try {
+        if (showLoading) setLoading(true);
+        const token = session?.user?.token;
+        console.log('[ADMIN] Fetching orders with token:', token ? '✓' : '✗');
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const response = await fetch('/api/orders?limit=100', { headers });
 
-      console.log('[ADMIN] Orders API response status:', response.status);
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[ADMIN] Failed to fetch orders:', response.status, errorText);
+        console.log('[ADMIN] Orders API response status:', response.status);
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('[ADMIN] Failed to fetch orders:', response.status, errorText);
+          setOrders([]);
+          return;
+        }
+
+        const data = await response.json();
+        console.log('[ADMIN] Received orders data:', data);
+        const ordersList = data.orders || data;
+        setOrders(Array.isArray(ordersList) ? ordersList : []);
+        console.log(
+          '[ADMIN] Set orders to:',
+          Array.isArray(ordersList) ? ordersList.length : 0,
+          'items'
+        );
+      } catch (error) {
+        console.error('[ADMIN] Error fetching orders:', error);
         setOrders([]);
-        return;
+      } finally {
+        if (showLoading) setLoading(false);
       }
-
-      const data = await response.json();
-      console.log('[ADMIN] Received orders data:', data);
-      const ordersList = data.orders || data;
-      setOrders(Array.isArray(ordersList) ? ordersList : []);
-      console.log(
-        '[ADMIN] Set orders to:',
-        Array.isArray(ordersList) ? ordersList.length : 0,
-        'items'
-      );
-    } catch (error) {
-      console.error('[ADMIN] Error fetching orders:', error);
-      setOrders([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [session?.user?.token]);
+    },
+    [session?.user?.token]
+  );
 
   useEffect(() => {
     if (!session?.user?.token) {
@@ -449,10 +452,10 @@ export default function AdminDashboard() {
     console.log('[ADMIN] useEffect - Token available, calling fetchOrders');
     fetchOrders();
 
-    // Auto-refresh orders every 5 seconds for real-time updates
-    const POLL_INTERVAL_MS = 5000;
+    // Auto-refresh orders every 15 seconds for real-time updates (silent, no loading state)
+    const POLL_INTERVAL_MS = 15000;
     const pollingInterval = setInterval(() => {
-      fetchOrders();
+      fetchOrders(false);
     }, POLL_INTERVAL_MS);
 
     return () => clearInterval(pollingInterval);

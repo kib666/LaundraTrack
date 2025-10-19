@@ -14,38 +14,43 @@ export default function OrdersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
 
-  const fetchOrders = useCallback(async () => {
-    try {
-      setLoading(true);
-      const headers = session?.user?.token ? { Authorization: `Bearer ${session.user.token}` } : {};
+  const fetchOrders = useCallback(
+    async (showLoading = true) => {
+      try {
+        if (showLoading) setLoading(true);
+        const headers = session?.user?.token
+          ? { Authorization: `Bearer ${session.user.token}` }
+          : {};
 
-      const response = await fetch('/api/orders', { headers });
+        const response = await fetch('/api/orders', { headers });
 
-      if (!response.ok) {
-        console.error('Failed to fetch orders:', response.status);
+        if (!response.ok) {
+          console.error('Failed to fetch orders:', response.status);
+          setOrders([]);
+          return;
+        }
+
+        const data = await response.json();
+        const ordersList = data.orders || data;
+        setOrders(Array.isArray(ordersList) ? ordersList : []);
+      } catch (error) {
+        console.error('An error occurred while fetching orders:', error);
         setOrders([]);
-        return;
+      } finally {
+        if (showLoading) setLoading(false);
       }
-
-      const data = await response.json();
-      const ordersList = data.orders || data;
-      setOrders(Array.isArray(ordersList) ? ordersList : []);
-    } catch (error) {
-      console.error('An error occurred while fetching orders:', error);
-      setOrders([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [session?.user?.token]);
+    },
+    [session?.user?.token]
+  );
 
   useEffect(() => {
     if (session?.user?.token) {
       fetchOrders();
 
-      // Auto-refresh orders every 5 seconds for real-time updates
-      const POLL_INTERVAL_MS = 5000;
+      // Auto-refresh orders every 15 seconds for real-time updates (silent, no loading state)
+      const POLL_INTERVAL_MS = 15000;
       const pollingInterval = setInterval(() => {
-        fetchOrders();
+        fetchOrders(false);
       }, POLL_INTERVAL_MS);
 
       return () => clearInterval(pollingInterval);

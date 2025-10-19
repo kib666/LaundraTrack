@@ -11,28 +11,33 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(true);
   const pollerRef = useRef(null);
 
-  const fetchOrders = useCallback(async () => {
-    try {
-      setLoading(true);
-      const headers = session?.user?.token ? { Authorization: `Bearer ${session.user.token}` } : {};
-      const response = await fetch('/api/orders?limit=200', { headers });
+  const fetchOrders = useCallback(
+    async (showLoading = true) => {
+      try {
+        if (showLoading) setLoading(true);
+        const headers = session?.user?.token
+          ? { Authorization: `Bearer ${session.user.token}` }
+          : {};
+        const response = await fetch('/api/orders?limit=200', { headers });
 
-      if (!response.ok) {
-        console.error('Failed to fetch orders:', await response.text());
+        if (!response.ok) {
+          console.error('Failed to fetch orders:', await response.text());
+          setOrders([]);
+          return;
+        }
+
+        const data = await response.json();
+        const ordersList = data.orders || data;
+        setOrders(Array.isArray(ordersList) ? ordersList : []);
+      } catch (error) {
+        console.error('Error fetching orders:', error);
         setOrders([]);
-        return;
+      } finally {
+        if (showLoading) setLoading(false);
       }
-
-      const data = await response.json();
-      const ordersList = data.orders || data;
-      setOrders(Array.isArray(ordersList) ? ordersList : []);
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-      setOrders([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [session?.user?.token]);
+    },
+    [session?.user?.token]
+  );
 
   useEffect(() => {
     if (!session?.user?.token) {
@@ -42,16 +47,16 @@ export default function CalendarPage() {
     fetchOrders();
   }, [fetchOrders, session?.user?.token]);
 
-  // Auto-polling for calendar updates
+  // Auto-polling for calendar updates (silent, no loading state)
   useEffect(() => {
     if (!session?.user?.token) {
       return;
     }
 
-    const POLL_INTERVAL_MS = 5000;
+    const POLL_INTERVAL_MS = 15000;
 
     pollerRef.current = setInterval(() => {
-      fetchOrders();
+      fetchOrders(false);
     }, POLL_INTERVAL_MS);
 
     return () => {
