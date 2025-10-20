@@ -4,7 +4,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
 import {
-  Box,
   User,
   Users,
   Truck,
@@ -106,25 +105,25 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-blue-50/30 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-white via-blue-50/40 to-blue-100/40">
       {/* Navigation */}
       <nav className="bg-white/90 backdrop-blur-lg sticky top-0 z-50 border-b border-blue-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
-            <Link href="/" className="flex items-center space-x-3 group">
+            <Link href="/" className="flex items-center group -ml-4 sm:-ml-2 lg:-ml-6">
               <div className="relative">
-                <Box
-                  className="text-blue-600 group-hover:text-blue-700 transition-colors"
-                  size={32}
+                <Image
+                  src="/images/laundra-track-logo.png"
+                  alt="LaundraTrack Logo"
+                  width={220}
+                  height={100}
+                  className="h-[250px] w-auto object-contain"
+                  priority
                 />
-                <div className="absolute -inset-1 bg-blue-400/20 rounded-lg blur opacity-0 group-hover:opacity-100 transition-opacity"></div>
               </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-                LaundraTrack
-              </span>
             </Link>
 
-            <div className="hidden md:flex items-center space-x-8">
+            <div className="hidden md:flex items-center space-x-8 md:translate-x-4 lg:translate-x-8">
               <Link
                 href="#features"
                 className="text-gray-600 hover:text-blue-600 transition-colors font-medium text-sm"
@@ -151,24 +150,9 @@ export default function HomePage() {
       {/* Hero Section */}
       <main>
         <section className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-100/40 via-white to-blue-50/30"></div>
+          <div className="pointer-events-none absolute inset-x-0 top-0 -bottom-24 bg-gradient-to-br from-blue-100/40 via-white to-blue-50/40"></div>
 
           <div className="relative max-w-7xl mx-auto py-20 px-4 sm:px-6 lg:px-8 text-center">
-            {/* Logo */}
-            <div className="flex justify-center mb-8 animate-fade-in">
-              <div className="relative group">
-                <div className="absolute -inset-4 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full opacity-20 blur-2xl group-hover:opacity-30 transition-opacity"></div>
-                <Image
-                  src="/images/laundra-track-logo.png"
-                  alt="LaundraTrack Logo"
-                  width={500}
-                  height={300}
-                  className="relative drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-300"
-                  priority
-                />
-              </div>
-            </div>
-
             {/* Subtitle */}
 
             {/* Main Heading */}

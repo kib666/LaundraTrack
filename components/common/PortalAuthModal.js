@@ -344,14 +344,6 @@ const PortalAuthModal = ({ isOpen, portalType, onClose }) => {
             </p>
           </div>
         )}
-
-        {/* Portal Info */}
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <p className="text-xs text-gray-700">
-            <span className="font-semibold">📌 Tip:</span> Your role ({portalRoleMap[portalType]})
-            will be verified during authentication. Only authorized users can access this portal.
-          </p>
-        </div>
       </div>
     </Modal>
   );

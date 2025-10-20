@@ -711,9 +711,9 @@ This project is private and created for educational purposes as part of the TIP 
 
 ## 👥 Contributors
 
-- **M1G Team** – Laundry Management System
-- **Course:** Parallel and Distributed Computing (TIP)
-- **Year:** 2024
+- **LaundraTrack Team** – Laundry Management System
+- **Course:** Technopreneurship (TIP)
+- **Year:** 2025
 
 ---
 
