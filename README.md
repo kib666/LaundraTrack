@@ -2,7 +2,7 @@
 
 > A comprehensive laundry tracking and management platform designed for businesses and customers. Features real-time order tracking, staff management, analytics, and seamless appointment booking. Built with Next.js 14, React 18, MongoDB, and modern DevOps practices.
 >
-> **Course Project:** Parallel and Distributed Computing (M1G Team)
+> **Course Project:** Technopreneurship (LaundraTrack Team)
 
 ## 📋 Table of Contents
 
@@ -705,7 +705,7 @@ Please read [CONTRIBUTING.md](docs/CONTRIBUTING.md) for detailed guidelines.
 
 ## 📄 License
 
-This project is private and created for educational purposes as part of the TIP coursework in Parallel and Distributed Computing.
+This project is private and created for educational purposes as part of the TIP coursework in Technopreneurship.
 
 ---
 

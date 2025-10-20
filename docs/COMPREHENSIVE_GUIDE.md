@@ -432,8 +432,8 @@ console.log(DEBUG && 'Debug info:', data);
 
 ## 👥 Team
 
-**M1G Team** - LaudraTrack Project  
-Course: Parallel and Distributed Computing (TIP)
+**LaundraTrack Team** - LaudraTrack Project  
+Course: Technopreneurship (TIP)
 
 ---
 

@@ -1,7 +1,7 @@
 {
   "name": "laudratrack",
   "version": "1.0.0",
-  "description": "M1G Laundry Management System - Professional laundry tracking and management platform",
+  "description": "LaundraTrack Laundry Management System - Professional laundry tracking and management platform",
   "private": true,
   "scripts": {
     "dev": "node scripts/dev.js",
