@@ -695,8 +695,8 @@ Please read [CONTRIBUTING.md](docs/CONTRIBUTING.md) for detailed guidelines.
 
 **Questions or Issues?**
 
-- 📧 **Email:** mamdavid@tip.edu.ph
-- 📱 **Phone:** +639696438031
+- 📧 **Email:** mikplacencia@tip.edu.ph
+- 📱 **Phone:** +639123456789
 - 📍 **Location:** Manila, Philippines
 - 🐛 **GitHub Issues:** Create an issue for bugs or feature requests
 - 💬 **Discussions:** Use GitHub Discussions for Q&A
@@ -738,6 +738,6 @@ This project is private and created for educational purposes as part of the TIP 
 
 ---
 
-**Last Updated:** 2024  
+**Last Updated:** 2025 October
 **Status:** ✅ Production-Ready  
 **Version:** 1.0.0
