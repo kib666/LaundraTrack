@@ -23,16 +23,6 @@ export default function SuperAdminDashboard() {
   const [submitting, setSubmitting] = useState(false);
 
   // Check authentication
-  useEffect(() => {
-    const storedToken = localStorage.getItem('superadminToken');
-    if (!storedToken) {
-      window.location.href = '/';
-      return;
-    }
-    setToken(storedToken);
-    fetchAdmins(storedToken);
-  }, []);
-
   const fetchAdmins = useCallback(async (authToken) => {
     try {
       setLoading(true);
@@ -58,6 +48,16 @@ export default function SuperAdminDashboard() {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    const storedToken = localStorage.getItem('superadminToken');
+    if (!storedToken) {
+      window.location.href = '/';
+      return;
+    }
+    setToken(storedToken);
+    fetchAdmins(storedToken);
+  }, [fetchAdmins]);
 
   const handleAddNew = () => {
     setSelectedAdmin(null);

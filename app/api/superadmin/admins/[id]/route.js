@@ -22,6 +22,7 @@ async function verifySuperAdmin(request) {
 
     return { valid: true, userId: decoded.userId };
   } catch (error) {
+    console.error('Super admin token verification failed:', error);
     return { valid: false, error: 'Invalid or expired token' };
   }
 }
@@ -98,8 +99,8 @@ export async function PATCH(request, { params }) {
       message: 'Admin updated successfully',
       admin: adminData,
     });
-  } catch (error) {
-    console.error('Error updating admin:', error);
+  } catch (updateError) {
+    console.error('Error updating admin:', updateError);
     return Response.json({ message: 'An error occurred while updating admin' }, { status: 500 });
   }
 }
@@ -132,8 +133,8 @@ export async function DELETE(request, { params }) {
       success: true,
       message: 'Admin deleted successfully',
     });
-  } catch (error) {
-    console.error('Error deleting admin:', error);
+  } catch (deleteError) {
+    console.error('Error deleting admin:', deleteError);
     return Response.json({ message: 'An error occurred while deleting admin' }, { status: 500 });
   }
 }

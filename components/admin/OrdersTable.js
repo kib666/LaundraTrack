@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Calendar } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 // Status display mapping for consistency with staff page
 const getStatusDisplay = (status) => {

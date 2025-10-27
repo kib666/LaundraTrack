@@ -411,7 +411,8 @@ export default function AdminDashboard() {
         const data = await response.json();
         const ordersList = data.orders || data;
         setOrders(Array.isArray(ordersList) ? ordersList : []);
-      } catch (error) {
+      } catch (fetchError) {
+        console.error('Failed to fetch orders:', fetchError);
         setOrders([]);
       } finally {
         if (showLoading) setLoading(false);

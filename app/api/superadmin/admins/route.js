@@ -21,6 +21,7 @@ async function verifySuperAdmin(request) {
 
     return { valid: true, userId: decoded.userId };
   } catch (error) {
+    console.error('Super admin token verification failed:', error);
     return { valid: false, error: 'Invalid or expired token' };
   }
 }
@@ -42,8 +43,8 @@ export async function GET(request) {
       success: true,
       admins,
     });
-  } catch (error) {
-    console.error('Error fetching admins:', error);
+  } catch (fetchError) {
+    console.error('Error fetching admins:', fetchError);
     return Response.json({ message: 'An error occurred while fetching admins' }, { status: 500 });
   }
 }
@@ -100,8 +101,8 @@ export async function POST(request) {
       },
       { status: 201 }
     );
-  } catch (error) {
-    console.error('Error creating admin:', error);
+  } catch (createError) {
+    console.error('Error creating admin:', createError);
     return Response.json({ message: 'An error occurred while creating admin' }, { status: 500 });
   }
 }
