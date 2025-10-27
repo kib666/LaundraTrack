@@ -470,13 +470,13 @@ export default function StaffPage() {
     }
 
     if (status === 'unauthenticated') {
-      window.location.href = '/customer?error=staff_access_required';
+      window.location.href = '/';
     } else if (status === 'authenticated') {
       // Check if user is staff or admin
       const userRole = session?.user?.role;
       if (userRole !== 'staff' && userRole !== 'admin') {
         console.log('Access denied. User role:', userRole);
-        window.location.href = '/customer?error=unauthorized';
+        window.location.href = '/';
       }
     }
   }, [status, session?.user?.role]);

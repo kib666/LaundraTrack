@@ -4,8 +4,6 @@ import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import {
   Package,
-  Plus,
-  CheckCircle,
   Loader,
   Clock,
   Truck,
@@ -14,8 +12,6 @@ import {
   Calendar as CalendarIcon,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import Modal from '@/components/common/Modal';
-import OrderForm from '@/components/admin/OrderForm';
 
 const RechartsResponsiveContainer = dynamic(
   () => import('recharts').then((mod) => mod.ResponsiveContainer),
@@ -84,10 +80,10 @@ const RecentOrdersTable = ({ orders }) => {
                 Status
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Pickup Date
+                Order Date
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Delivery ETA
+                Preferred Date
               </th>
               <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Total
@@ -98,8 +94,8 @@ const RecentOrdersTable = ({ orders }) => {
             {orders.map((order) => {
               const customer = order.customerId || {};
               const orderId = order.trackingNumber || order.id || order._id;
-              const pickupDate = order.pickupDate || order.createdAt;
-              const etaDate = order.deliveryDate || order.eta;
+              const orderDate = order.createdAt;
+              const preferredDate = order.preferredDate;
               const statusDisplay = getStatusDisplay(order.status);
 
               return (
@@ -119,10 +115,10 @@ const RecentOrdersTable = ({ orders }) => {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">
-                    {pickupDate ? new Date(pickupDate).toLocaleDateString() : '—'}
+                    {orderDate ? new Date(orderDate).toLocaleDateString() : '—'}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">
-                    {etaDate ? new Date(etaDate).toLocaleDateString() : '—'}
+                    {preferredDate ? new Date(preferredDate).toLocaleDateString() : '—'}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-900 text-right">
                     ₱{Number(order.totalAmount || order.total || 0).toFixed(2)}
@@ -397,44 +393,25 @@ const computeDashboardMetrics = (orders) => {
 export default function AdminDashboard() {
   const { data: session } = useSession();
   const [orders, setOrders] = useState([]);
-  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [orderSuccess, setOrderSuccess] = useState(false);
-
-  console.log('[ADMIN PAGE] Session loaded:', {
-    hasSession: !!session,
-    userRole: session?.user?.role,
-    hasToken: !!session?.user?.token,
-  });
 
   const fetchOrders = useCallback(
     async (showLoading = true) => {
       try {
         if (showLoading) setLoading(true);
         const token = session?.user?.token;
-        console.log('[ADMIN] Fetching orders with token:', token ? '✓' : '✗');
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         const response = await fetch('/api/orders?limit=100', { headers });
 
-        console.log('[ADMIN] Orders API response status:', response.status);
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error('[ADMIN] Failed to fetch orders:', response.status, errorText);
           setOrders([]);
           return;
         }
 
         const data = await response.json();
-        console.log('[ADMIN] Received orders data:', data);
         const ordersList = data.orders || data;
         setOrders(Array.isArray(ordersList) ? ordersList : []);
-        console.log(
-          '[ADMIN] Set orders to:',
-          Array.isArray(ordersList) ? ordersList.length : 0,
-          'items'
-        );
       } catch (error) {
-        console.error('[ADMIN] Error fetching orders:', error);
         setOrders([]);
       } finally {
         if (showLoading) setLoading(false);
@@ -445,14 +422,11 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (!session?.user?.token) {
-      console.log('[ADMIN] useEffect - No token yet, skipping fetch');
       return;
     }
 
-    console.log('[ADMIN] useEffect - Token available, calling fetchOrders');
     fetchOrders();
 
-    // Auto-refresh orders every 15 seconds for real-time updates (silent, no loading state)
     const POLL_INTERVAL_MS = 15000;
     const pollingInterval = setInterval(() => {
       fetchOrders(false);
@@ -460,34 +434,6 @@ export default function AdminDashboard() {
 
     return () => clearInterval(pollingInterval);
   }, [fetchOrders, session?.user?.token]);
-
-  const handleCreateOrder = async (formData) => {
-    try {
-      const headers = {
-        'Content-Type': 'application/json',
-      };
-      if (session?.user?.token) {
-        headers.Authorization = `Bearer ${session.user.token}`;
-      }
-
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        setIsOrderModalOpen(false);
-        setOrderSuccess(true);
-        await fetchOrders();
-      } else {
-        const errorData = await response.json();
-        console.error('Failed to create order:', errorData.error || response.statusText);
-      }
-    } catch (error) {
-      console.error('Error creating order:', error);
-    }
-  };
 
   const metrics = useMemo(() => computeDashboardMetrics(orders), [orders]);
 
@@ -512,13 +458,6 @@ export default function AdminDashboard() {
           <div className="xl:col-span-2 space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold text-gray-800">Recent Orders</h2>
-              <button
-                onClick={() => setIsOrderModalOpen(true)}
-                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 flex items-center space-x-2"
-              >
-                <Plus size={16} />
-                <span>Add Order</span>
-              </button>
             </div>
             <RecentOrdersTable orders={metrics.recentOrders} />
             <TrendBarChart data={metrics.weeklyData} />
@@ -530,30 +469,6 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
-
-      <Modal
-        isOpen={isOrderModalOpen}
-        onClose={() => setIsOrderModalOpen(false)}
-        title="Add New Order"
-      >
-        <OrderForm onSubmit={handleCreateOrder} onCancel={() => setIsOrderModalOpen(false)} />
-      </Modal>
-
-      {orderSuccess && (
-        <Modal isOpen={orderSuccess} onClose={() => setOrderSuccess(false)} title="Success">
-          <div className="text-center">
-            <CheckCircle className="mx-auto text-green-500 mb-4" size={48} />
-            <h3 className="text-lg font-semibold mb-2">Order Created Successfully!</h3>
-            <p className="text-gray-600 mb-4">The order has been added to the system.</p>
-            <button
-              onClick={() => setOrderSuccess(false)}
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
-            >
-              Close
-            </button>
-          </div>
-        </Modal>
-      )}
     </>
   );
 }

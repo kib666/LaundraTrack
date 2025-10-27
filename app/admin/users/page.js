@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Edit, Trash2, Loader, AlertTriangle, Lock } from 'lucide-react';
+import { Edit, Trash2, Loader, AlertTriangle, Lock } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import Modal from '@/components/common/Modal';
 import UserForm from '@/components/admin/UserForm';
@@ -10,8 +10,8 @@ export default function UsersManagementPage() {
   const { data: session, status } = useSession();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
   // Check if user is authenticated and is admin
@@ -58,46 +58,6 @@ export default function UsersManagementPage() {
       fetchUsers();
     }
   }, [fetchUsers, session?.user?.token]);
-
-  const handleFormSubmit = async (userData) => {
-    const isEditing = !!selectedUser;
-    const url = isEditing ? `/api/admin/users/${selectedUser._id}` : '/api/admin/users';
-    const method = isEditing ? 'PATCH' : 'POST';
-
-    try {
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session?.user?.token}`,
-        },
-        body: JSON.stringify(userData),
-      });
-
-      if (response.ok) {
-        setIsModalOpen(false);
-        setSelectedUser(null);
-        await fetchUsers();
-      } else {
-        const errorData = await response.json();
-        console.error('Failed to save user:', errorData.error || errorData.message);
-        alert(`Error: ${errorData.error || errorData.message}`);
-      }
-    } catch (error) {
-      console.error('Failed to save user:', error);
-      alert('An unexpected error occurred.');
-    }
-  };
-
-  const handleEdit = (user) => {
-    setSelectedUser(user);
-    setIsModalOpen(true);
-  };
-
-  const handleAddNew = () => {
-    setSelectedUser(null);
-    setIsModalOpen(true);
-  };
 
   const openDeleteModal = (user) => {
     setSelectedUser(user);
@@ -154,6 +114,41 @@ export default function UsersManagementPage() {
     }
   };
 
+  const handleFormSubmit = async (userData) => {
+    const isEditing = !!selectedUser;
+    const url = isEditing ? `/api/admin/users/${selectedUser._id}` : '/api/admin/users';
+    const method = isEditing ? 'PATCH' : 'POST';
+
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.user?.token}`,
+        },
+        body: JSON.stringify(userData),
+      });
+
+      if (response.ok) {
+        setIsModalOpen(false);
+        setSelectedUser(null);
+        await fetchUsers();
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to save user:', errorData.error || errorData.message);
+        alert(`Error: ${errorData.error || errorData.message}`);
+      }
+    } catch (error) {
+      console.error('Failed to save user:', error);
+      alert('An unexpected error occurred.');
+    }
+  };
+
+  const handleEdit = (user) => {
+    setSelectedUser(user);
+    setIsModalOpen(true);
+  };
+
   if (status === 'loading' || loading) {
     return (
       <div className="flex justify-center items-center p-8 h-full">
@@ -177,15 +172,6 @@ export default function UsersManagementPage() {
 
   return (
     <>
-      <div className="flex justify-end mb-4">
-        <button
-          onClick={handleAddNew}
-          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 flex items-center space-x-2"
-        >
-          <Plus size={16} />
-          <span>Add User</span>
-        </button>
-      </div>
       <div className="bg-white rounded-lg shadow-sm border p-6">
         <div className="overflow-x-auto overflow-y-auto max-h-[600px]">
           <table className="min-w-full divide-y divide-gray-200">

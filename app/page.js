@@ -16,9 +16,11 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import PortalAuthModal from '@/components/common/PortalAuthModal';
+import SuperAdminLoginModal from '@/components/common/SuperAdminLoginModal';
 
 export default function HomePage() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isSuperAdminModalOpen, setIsSuperAdminModalOpen] = useState(false);
   const [selectedPortal, setSelectedPortal] = useState(null);
 
   const handlePortalClick = (portalType) => {
@@ -110,7 +112,11 @@ export default function HomePage() {
       <nav className="bg-white/90 backdrop-blur-lg sticky top-0 z-50 border-b border-blue-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
-            <Link href="/" className="flex items-center group -ml-4 sm:-ml-2 lg:-ml-6">
+            <button
+              onClick={() => setIsSuperAdminModalOpen(true)}
+              className="flex items-center group -ml-4 sm:-ml-2 lg:-ml-6 hover:opacity-80 transition-opacity"
+              title="Super Admin Login"
+            >
               <div className="relative">
                 <Image
                   src="/images/laundra-track-logo.png"
@@ -121,7 +127,7 @@ export default function HomePage() {
                   priority
                 />
               </div>
-            </Link>
+            </button>
 
             <div className="hidden md:flex items-center space-x-8 md:translate-x-4 lg:translate-x-8">
               <Link
@@ -358,6 +364,12 @@ export default function HomePage() {
           onClose={handleCloseAuthModal}
         />
       )}
+
+      {/* Super Admin Login Modal */}
+      <SuperAdminLoginModal
+        isOpen={isSuperAdminModalOpen}
+        onClose={() => setIsSuperAdminModalOpen(false)}
+      />
     </div>
   );
 }

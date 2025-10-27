@@ -17,9 +17,9 @@ const getStatusDisplay = (status) => {
 // New EditableDate component
 const EditableDate = ({ order, onDateUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const deliveryDate = order.deliveryDate || order.eta;
+  const preferredDate = order.preferredDate;
   const [newDate, setNewDate] = useState(
-    deliveryDate ? new Date(deliveryDate).toISOString().split('T')[0] : ''
+    preferredDate ? new Date(preferredDate).toISOString().split('T')[0] : ''
   );
 
   const handleSave = () => {
@@ -44,13 +44,12 @@ const EditableDate = ({ order, onDateUpdate }) => {
     );
   }
 
+  if (!preferredDate) {
+    return <span className="text-sm text-gray-500">Not set</span>;
+  }
+
   return (
-    <div className="flex items-center gap-2 cursor-pointer" onClick={() => setIsEditing(true)}>
-      <Calendar size={14} className="text-gray-500" />
-      <span className="text-sm text-gray-900">
-        {deliveryDate ? new Date(deliveryDate).toLocaleDateString() : 'Not set'}
-      </span>
-    </div>
+    <span className="text-sm text-gray-900">{new Date(preferredDate).toLocaleDateString()}</span>
   );
 };
 
@@ -120,10 +119,10 @@ const OrdersTable = ({ orders, onDateUpdate }) => {
                 Status
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Delivery Date
+                Order Date
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Preferred Time
+                Preferred Date
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Total
@@ -166,11 +165,11 @@ const OrdersTable = ({ orders, onDateUpdate }) => {
                       );
                     })()}
                   </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'Not set'}
+                  </td>
                   <td className="px-4 py-4 whitespace-nowrap">
                     <EditableDate order={order} onDateUpdate={onDateUpdate} />
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {order.preferredTime || 'Not set'}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     ₱{(order.totalAmount || 0).toFixed(2)}

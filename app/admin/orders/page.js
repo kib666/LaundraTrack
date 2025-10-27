@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Loader, CheckCircle } from 'lucide-react';
+import { Loader, CheckCircle } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import OrdersTable from '@/components/admin/OrdersTable';
 import Modal from '@/components/common/Modal';
@@ -117,15 +117,6 @@ export default function OrdersPage() {
 
   return (
     <>
-      <div className="flex justify-end mb-4">
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 flex items-center space-x-2"
-        >
-          <Plus size={16} />
-          <span>Add Order</span>
-        </button>
-      </div>
       <div className="bg-white rounded-lg shadow-sm border">
         <OrdersTable orders={orders} onDateUpdate={handleDateUpdate} />
       </div>

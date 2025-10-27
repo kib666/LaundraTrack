@@ -44,13 +44,13 @@ export default function AdminLayout({ children }) {
     setIsChecking(false);
 
     if (status === 'unauthenticated') {
-      window.location.href = '/customer?error=admin_access_required';
+      window.location.href = '/';
     } else if (status === 'authenticated') {
       // Double-check role is admin, wait a moment for session to fully load
       setTimeout(() => {
         if (!session?.user?.role || session.user.role !== 'admin') {
           console.log('Access denied. User role:', session?.user?.role);
-          window.location.href = '/customer?error=unauthorized';
+          window.location.href = '/';
         }
       }, 100);
     }
